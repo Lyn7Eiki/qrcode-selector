@@ -724,10 +724,10 @@ body {
   position: absolute;
   top: -45px;
   right: 0;
-  color: white;
+  color: #333;
   font-size: 40px;
   cursor: pointer;
-  opacity: 0.8;
+  opacity: 0.7;
   transition:
     opacity 0.2s,
     transform 0.2s;
