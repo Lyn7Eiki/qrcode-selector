@@ -111,12 +111,25 @@ function loadDataSource(index) {
     });
 }
 
-// 更新 corner header 文本
+// 更新 corner header 文本和下拉框选中状态
 function updateCornerHeader() {
   const corner = document.getElementById("corner-header");
   if (corner) {
     const label = DATA_SOURCES[state.currentDataSourceIndex].label;
     corner.querySelector(".corner-label").textContent = label;
+  }
+
+  // 更新下拉框菜单项的选中状态
+  const dropdown = document.getElementById("corner-dropdown");
+  if (dropdown) {
+    const items = dropdown.querySelectorAll(".corner-dropdown-item");
+    items.forEach((item, index) => {
+      if (index === state.currentDataSourceIndex) {
+        item.classList.add("active");
+      } else {
+        item.classList.remove("active");
+      }
+    });
   }
 }
 
