@@ -43,8 +43,8 @@ function init() {
   loadSheet(state.activeSheet);
   selectCell(0, 0);
 
-  // Try to load init.json
-  fetch("init.json")
+  // Try to load fy.json
+  fetch("fy.json")
     .then((response) => {
       if (!response.ok) throw new Error("Network response was not ok");
       return response.json();
@@ -67,7 +67,7 @@ function init() {
     })
     .catch((err) => {
       console.log(
-        "Could not load init.json (likely due to local file restrictions or missing file), keeping default state.",
+        "Could not load fy.json (likely due to local file restrictions or missing file), keeping default state.",
         err,
       );
     });

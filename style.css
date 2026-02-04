@@ -326,6 +326,24 @@ body {
 .sheet-tabs-list {
   display: flex;
   height: 100%;
+  flex: 1;
+  max-width: calc(100vw - 90px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+}
+.sheet-tabs-list::-webkit-scrollbar {
+  height: 4px;
+}
+.sheet-tabs-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sheet-tabs-list::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 2px;
+}
+.sheet-tabs-list::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
 }
 
 .sheet-tab {
@@ -338,6 +356,8 @@ body {
   height: 100%;
   position: relative;
   border-right: 1px solid transparent;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .sheet-tab:hover {
   background: #e1e1e1;
@@ -378,7 +398,8 @@ body {
 }
 
 .scroll-spacer {
-  flex: 1;
+  width: 10px;
+  flex-shrink: 0;
 }
 
 /* Page Footer */
@@ -636,12 +657,24 @@ body {
   gap: 15px;
   flex-wrap: nowrap;
   overflow-x: auto;
+  overflow-y: hidden;
   padding: 15px 5px;
   margin-top: 15px;
   border-top: 1px solid #e1e8f0;
 }
 .qr-bottom-nav::-webkit-scrollbar {
-  display: none;
+  height: 5px;
+}
+.qr-bottom-nav::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+.qr-bottom-nav::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+.qr-bottom-nav::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
 }
 
 .qr-nav-item {
