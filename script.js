@@ -7,6 +7,12 @@ const CONFIG = {
   rowHeaderWidth: 50,
 };
 
+// 数据源配置
+const DATA_SOURCES = [
+  { file: "fy.json", label: "反应" },
+  { file: "test.json", label: "测试" },
+];
+
 const state = {
   sheets: {
     Sheet1: {
@@ -25,6 +31,7 @@ const state = {
   },
   activeSheet: "Sheet1",
   selection: { r: 0, c: 0 },
+  currentDataSourceIndex: 0, // 当前数据源索引
 };
 
 // DOM Elements
@@ -43,8 +50,19 @@ function init() {
   loadSheet(state.activeSheet);
   selectCell(0, 0);
 
-  // Try to load fy.json
-  fetch("fy.json")
+  // 加载默认数据源
+  loadDataSource(state.currentDataSourceIndex);
+
+  // Event Listeners
+  setupEvents();
+}
+
+// 加载指定数据源
+function loadDataSource(index) {
+  const source = DATA_SOURCES[index];
+  if (!source) return;
+
+  fetch(source.file)
     .then((response) => {
       if (!response.ok) throw new Error("Network response was not ok");
       return response.json();
@@ -60,20 +78,27 @@ function init() {
         });
         state.sheets = json;
         state.activeSheet = keys[0];
+        state.currentDataSourceIndex = index;
         renderSheetTabs();
         loadSheet(state.activeSheet);
         selectCell(0, 0);
+        // Update corner header text
+        const corner = document.getElementById("corner-header");
+        if (corner) corner.textContent = source.label;
       }
     })
     .catch((err) => {
       console.log(
-        "Could not load fy.json (likely due to local file restrictions or missing file), keeping default state.",
+        `Could not load ${source.file} (likely due to local file restrictions or missing file), keeping default state.`,
         err,
       );
     });
+}
 
-  // Event Listeners
-  setupEvents();
+// 切换数据源
+function switchDataSource() {
+  const nextIndex = (state.currentDataSourceIndex + 1) % DATA_SOURCES.length;
+  loadDataSource(nextIndex);
 }
 
 function setupGrid() {
@@ -85,11 +110,15 @@ function setupGrid() {
 
   container.innerHTML = "";
 
-  // 0. Corner Header
+  // 0. Corner Header with Data Source Switcher
   const corner = document.createElement("div");
   corner.className = "corner-header";
+  corner.id = "corner-header";
   corner.style.gridColumn = "1 / 2";
   corner.style.gridRow = "1 / 2";
+  corner.title = "点击切换数据源";
+  corner.textContent = DATA_SOURCES[state.currentDataSourceIndex].label;
+  corner.onclick = switchDataSource;
   container.appendChild(corner);
 
   // 1. Column Headers (A-Z)

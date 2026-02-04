@@ -240,11 +240,28 @@ body {
   top: 0;
   left: 0;
   z-index: 20;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--excel-green);
+  font-size: 11px;
+  font-weight: 600;
+  user-select: none;
   /* little triangle */
   background-image: linear-gradient(135deg, transparent 50%, #bbb 50%);
   background-size: 10px 10px;
   background-repeat: no-repeat;
   background-position: bottom 2px right 2px;
+  transition: background-color 0.2s ease;
+}
+.corner-header:hover {
+  background-color: #e8e8e8;
+  background-image: linear-gradient(
+    135deg,
+    transparent 50%,
+    var(--excel-green) 50%
+  );
 }
 
 /* Cells */
@@ -500,7 +517,7 @@ body {
 .qr-upper-section {
   display: flex;
   gap: 20px;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .qr-card {
@@ -588,8 +605,6 @@ body {
   padding: 10px;
   flex: 1;
   min-width: 0;
-  height: 200px;
-  max-height: 200px;
   overflow-y: auto;
   overflow-x: hidden;
   border: 1px solid #e1e8f0;
