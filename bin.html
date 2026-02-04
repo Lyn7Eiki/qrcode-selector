@@ -1,0 +1,3093 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>二维码工具</title>
+
+    <style>
+      :root {
+        --excel-green: #217346;
+        --on-theme-text: #ffffff; /* 文字在主题色背景上的颜色 */
+        --border-color: #d4d4d4;
+        --grid-line-color: #e1e1e1;
+        --header-bg: #f8f9fa;
+        --header-text: #333;
+        --footer-bg: #f3f3f3;
+      }
+
+      /* Blue Theme */
+      body.theme-blue {
+        --excel-green: #2566c9;
+        --on-theme-text: #ffffff;
+      }
+
+      /* Theme Switcher Styles */
+      .theme-switch-container {
+        position: absolute;
+        top: 50%;
+        right: 40px; /* Leave space for help button if needed or just right align */
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        z-index: 100;
+      }
+
+      .theme-rocker {
+        display: inline-flex;
+        background-color: #f0f0f0;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        overflow: hidden;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        height: 24px;
+      }
+
+      .theme-option {
+        padding: 0 10px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        transition: all 0.2s ease;
+        user-select: none;
+        min-width: 40px;
+        position: relative;
+      }
+
+      .theme-option.active {
+        color: var(--on-theme-text);
+        background-color: var(--excel-green);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+
+      .theme-option:not(.active):hover {
+        background-color: #e0e0e0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 13px;
+        height: 100vh;
+        overflow: hidden;
+        color: #000;
+      }
+
+      .app-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      /* Landscape Warning - Shows when device is in landscape mode */
+      .landscape-warning {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #217346 0%, #1a5c38 100%);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+      }
+
+      /* Dismiss button in top-right corner */
+      .landscape-warning-dismiss {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.7);
+        transition: all 0.3s ease;
+      }
+
+      .landscape-warning-dismiss:hover {
+        color: white;
+      }
+
+      .dismiss-icon {
+        font-size: 32px;
+        font-weight: 300;
+        line-height: 1;
+      }
+
+      .dismiss-text {
+        position: absolute;
+        top: 68px;
+        right: 20px;
+        font-size: 13px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.6);
+        white-space: nowrap;
+      }
+
+      .landscape-warning-content {
+        text-align: center;
+        color: white;
+        padding: 40px;
+      }
+
+      .landscape-warning-icon {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 20px;
+        animation: rotate-phone 2s ease-in-out infinite;
+      }
+
+      @keyframes rotate-phone {
+        0%,
+        100% {
+          transform: rotate(0deg);
+        }
+        25% {
+          transform: rotate(-15deg);
+        }
+        75% {
+          transform: rotate(15deg);
+        }
+      }
+
+      .landscape-warning p {
+        font-size: 20px;
+        font-weight: 500;
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      /* Show warning when in landscape mode (unless dismissed) */
+      @media screen and (orientation: landscape) {
+        .landscape-warning:not(.dismissed) {
+          display: flex;
+        }
+        .landscape-warning:not(.dismissed) + .app-container {
+          display: none;
+        }
+      }
+
+      /* For screens wider than tall (desktop/tablet in landscape) */
+      @media screen and (min-aspect-ratio: 1/1) {
+        .landscape-warning:not(.dismissed) {
+          display: flex;
+        }
+        .landscape-warning:not(.dismissed) + .app-container {
+          display: none;
+        }
+      }
+
+      /* --- Formula Bar --- */
+      .excel-header {
+        background: #fff;
+        border-bottom: 1px solid var(--border-color);
+        padding: 2px 0;
+        flex: 0 0 auto;
+        position: relative;
+      }
+
+      .header-logo {
+        position: absolute;
+        top: 50%;
+        right: 10px;
+        transform: translateY(-50%);
+        width: 88px;
+        height: auto;
+        object-fit: contain;
+        cursor: pointer;
+      }
+
+      .formula-bar-wrapper {
+        display: flex;
+        align-items: center;
+        height: 28px;
+        padding: 0 10px;
+      }
+
+      .name-box {
+        width: 60px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        border: 1px solid transparent;
+        font-size: 13px;
+        color: #333;
+        padding-left: 5px;
+      }
+      .name-box:hover {
+        border-color: var(--border-color);
+      }
+
+      .formula-icon-separator {
+        margin: 0 10px;
+        color: #ccc;
+        display: flex;
+        align-items: center;
+      }
+
+      .fx-text {
+        font-weight: bold;
+        font-style: italic;
+        font-family: serif;
+        color: var(--excel-green);
+        margin-right: 15px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+      }
+      .fx-text:hover {
+        background: var(--excel-green);
+        color: white;
+      }
+      .fx-icon {
+        width: 14px;
+        height: 14px;
+        display: none; /* using text for better match */
+      }
+
+      .formula-divider {
+        width: 1px;
+        height: 16px;
+        background: #e1e1e1;
+        margin-right: 10px;
+      }
+
+      .formula-input {
+        flex: 1;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        border: 1px solid transparent; /* default no border */
+        outline: none;
+        font-size: 13px;
+        padding-left: 5px;
+      }
+      .formula-input:focus {
+        border: 1px solid var(--excel-green);
+      }
+
+      /* --- Main Grid --- */
+      .spreadsheet-container {
+        flex: 1;
+        overflow: auto;
+        display: grid;
+        /* We will set grid-template-columns/rows in JS or have defaults */
+        background: #fff;
+        position: relative;
+        /* Default grid for empty state */
+        grid-template-columns: 50px repeat(26, 100px);
+        grid-template-rows: 25px repeat(100, 22px);
+      }
+
+      /* Headers */
+      .header-col {
+        background: var(--header-bg);
+        border-right: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 500;
+        color: #666;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        user-select: none;
+      }
+      .header-col.active {
+        background: #e1e1e1;
+        color: var(--excel-green);
+        border-bottom: 2px solid var(--excel-green);
+      }
+
+      .header-row {
+        background: var(--header-bg);
+        border-right: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        position: sticky;
+        left: 0;
+        z-index: 10;
+        user-select: none;
+      }
+
+      .corner-header {
+        background: var(--header-bg);
+        border-right: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        left: 0;
+        z-index: 20;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--excel-green);
+        font-size: 11px;
+        font-weight: 600;
+        user-select: none;
+        /* little triangle */
+        background-image: linear-gradient(135deg, transparent 50%, #bbb 50%);
+        background-size: 10px 10px;
+        background-repeat: no-repeat;
+        background-position: bottom 2px right 2px;
+        transition: background-color 0.2s ease;
+      }
+      .corner-header:hover {
+        background-color: #e8e8e8;
+        background-image: linear-gradient(
+          135deg,
+          transparent 50%,
+          var(--excel-green) 50%
+        );
+      }
+
+      /* Corner Dropdown */
+      .corner-label {
+        position: relative;
+        z-index: 1;
+      }
+
+      .corner-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        min-width: 80px;
+        background: #fff;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-5px);
+        transition: all 0.2s ease;
+        z-index: 100;
+      }
+
+      .corner-dropdown.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .corner-dropdown-item {
+        padding: 8px 12px;
+        font-size: 12px;
+        color: #333;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+      }
+
+      .corner-dropdown-item:first-child {
+        border-radius: 4px 4px 0 0;
+      }
+
+      .corner-dropdown-item:last-child {
+        border-radius: 0 0 4px 4px;
+      }
+
+      .corner-dropdown-item:hover {
+        background: #f0f0f0;
+      }
+
+      .corner-dropdown-item.active {
+        background: var(--excel-green);
+        color: white;
+        font-weight: 600;
+      }
+
+      /* Cells */
+      .cell {
+        border-right: 1px solid var(--grid-line-color);
+        border-bottom: 1px solid var(--grid-line-color);
+        outline: none;
+        padding: 0 4px;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        overflow: hidden;
+        font-size: 13px;
+        background: #fff;
+        cursor: cell;
+      }
+
+      /* Selection Box */
+      .selection-box {
+        position: absolute;
+        border: 2px solid var(--excel-green);
+        pointer-events: none; /* allow clicking through to cell */
+        z-index: 5;
+        /* The fill handle */
+      }
+      .selection-handle {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: var(--excel-green);
+        bottom: -5px;
+        right: -5px;
+        border: 1px solid #fff;
+        cursor: crosshair;
+        pointer-events: auto;
+      }
+
+      /* --- Footer --- */
+      .status-bar {
+        height: 35px;
+        background: var(--footer-bg);
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+        border-top: 1px solid #e1e1e1;
+        flex: 0 0 auto;
+      }
+
+      .sheet-controls {
+        display: flex;
+        gap: 15px;
+        margin-right: 15px;
+        color: #999;
+      }
+      .nav-btn {
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 14px; /* Increased slightly */
+        font-weight: bold;
+        padding: 0;
+        transition: color 0.2s;
+      }
+
+      #btn-export {
+        color: var(--excel-green);
+      }
+      #btn-export:hover {
+        color: #165c36;
+      }
+
+      #btn-import {
+        color: #d93025; /* Red */
+      }
+      #btn-import:hover {
+        color: #a50e0e;
+      }
+
+      .sheet-tabs-list {
+        display: flex;
+        height: 100%;
+        flex: 1;
+        max-width: calc(100vw - 90px);
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-behavior: smooth;
+      }
+      .sheet-tabs-list::-webkit-scrollbar {
+        height: 4px;
+      }
+      .sheet-tabs-list::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .sheet-tabs-list::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 2px;
+      }
+      .sheet-tabs-list::-webkit-scrollbar-thumb:hover {
+        background: #aaa;
+      }
+
+      .sheet-tab {
+        padding: 0 20px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        font-size: 13px;
+        color: #666;
+        height: 100%;
+        position: relative;
+        border-right: 1px solid transparent;
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+      .sheet-tab:hover {
+        background: #e1e1e1;
+      }
+      .sheet-tab.active {
+        background: #fff;
+        color: var(--excel-green);
+        font-weight: 600;
+        box-shadow: inset 0 -3px 0 0 var(--excel-green); /* The underline */
+      }
+
+      .new-sheet-btn {
+        width: 30px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: none;
+        cursor: pointer;
+        color: #666;
+        margin-left: 5px;
+      }
+      .new-sheet-btn:hover .plus-icon {
+        background: #ccc;
+      }
+
+      .plus-icon {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        line-height: 1;
+        padding-bottom: 2px;
+      }
+
+      .scroll-spacer {
+        width: 10px;
+        flex-shrink: 0;
+      }
+
+      /* Page Footer */
+      .page-footer {
+        text-align: center;
+        padding: 8px 10px;
+        font-size: 12px;
+        color: #888;
+        background: #f8f9fa;
+        border-top: 1px solid var(--border-color);
+        flex: 0 0 auto;
+      }
+
+      .page-footer a {
+        color: var(--excel-green);
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .page-footer a:hover {
+        text-decoration: underline;
+      }
+
+      /* ===== QR Modal Styles ===== */
+      .qr-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(5px);
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+      .qr-modal-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .qr-modal {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        width: 90%;
+        max-width: 700px;
+        max-height: 90vh;
+        overflow: hidden;
+        animation: qrModalIn 0.3s ease;
+      }
+
+      @keyframes qrModalIn {
+        from {
+          transform: scale(0.9) translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1) translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .qr-modal-header {
+        background: var(--excel-green);
+        color: white;
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .qr-modal-header h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .qr-modal-close {
+        font-size: 28px;
+        cursor: pointer;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+        line-height: 1;
+      }
+      .qr-modal-close:hover {
+        opacity: 1;
+      }
+
+      .qr-modal-body {
+        padding: 20px;
+        max-height: calc(90vh - 60px);
+        overflow-y: auto;
+      }
+
+      .qr-upper-section {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+      }
+
+      .qr-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        padding: 12px;
+        padding-bottom: 0;
+        flex: 1;
+        min-width: 0;
+        border: 1px solid #e1e8f0;
+        position: relative;
+      }
+
+      .qr-zoom-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 28px;
+        height: 28px;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid #e1e8f0;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+        transition: all 0.2s ease;
+        color: var(--excel-green);
+      }
+      .qr-zoom-btn:hover {
+        background: var(--excel-green);
+        color: white;
+        border-color: var(--excel-green);
+        transform: scale(1.1);
+      }
+      .qr-zoom-btn svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .qr-container {
+        width: 100%;
+        aspect-ratio: 1;
+        background: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 8px;
+      }
+      .qr-container img,
+      .qr-container canvas {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      .qr-card-footer {
+        background-color: var(--excel-green);
+        color: white;
+        text-align: center;
+        padding: 12px 8px;
+        margin-top: 12px;
+        margin-left: -12px;
+        margin-right: -12px;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+      }
+      .qr-card-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+      .qr-card-subtitle {
+        font-size: 13px;
+        opacity: 0.9;
+      }
+
+      .qr-right-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 10px;
+        flex: 1;
+        min-width: 0;
+        max-height: var(--qr-card-height, 320px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        border: 1px solid #e1e8f0;
+        border-radius: 8px;
+        background: #fafbfc;
+      }
+      .qr-right-menu::-webkit-scrollbar {
+        width: 6px;
+      }
+      .qr-right-menu::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+      }
+      .qr-right-menu::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+      }
+      .qr-right-menu::-webkit-scrollbar-thumb:hover {
+        background: #a1a1a1;
+      }
+
+      .qr-radio-item {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        font-size: 14px;
+        color: #333;
+        transition: transform 0.2s ease;
+      }
+      .qr-radio-item:hover {
+        transform: translateX(3px);
+      }
+      .qr-radio-item input {
+        display: none;
+      }
+      .qr-custom-radio {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid #ccc;
+        margin-right: 10px;
+        background: #f5f5f5;
+        flex-shrink: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: all 0.2s;
+      }
+      .qr-radio-item input:checked + .qr-custom-radio {
+        background: var(--excel-green);
+        border-color: var(--excel-green);
+      }
+      .qr-radio-item input:checked + .qr-custom-radio::after {
+        content: "";
+        width: 5px;
+        height: 9px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+        margin-top: -2px;
+      }
+
+      .qr-bottom-nav {
+        display: flex;
+        gap: 15px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 15px 5px;
+        margin-top: 15px;
+        border-top: 1px solid #e1e8f0;
+      }
+      .qr-bottom-nav::-webkit-scrollbar {
+        height: 5px;
+      }
+      .qr-bottom-nav::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+      }
+      .qr-bottom-nav::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+      }
+      .qr-bottom-nav::-webkit-scrollbar-thumb:hover {
+        background: #a1a1a1;
+      }
+
+      .qr-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        min-width: 50px;
+        user-select: none;
+        transition: transform 0.2s ease;
+      }
+      .qr-nav-item:hover {
+        transform: scale(1.05);
+      }
+      .qr-nav-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #f0f0f0;
+        border: 2px solid #ccc;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: all 0.2s;
+      }
+      .qr-nav-text {
+        font-size: 12px;
+        font-weight: 600;
+        color: #555;
+        writing-mode: vertical-rl;
+        text-orientation: upright;
+        letter-spacing: 2px;
+        max-height: 70px;
+        overflow: hidden;
+      }
+      .qr-nav-item.active .qr-nav-circle {
+        background: var(--excel-green);
+        border-color: var(--excel-green);
+        transform: scale(1.1);
+      }
+      .qr-nav-item.active .qr-nav-circle::after {
+        content: "";
+        width: 5px;
+        height: 9px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+        margin-top: -2px;
+      }
+      .qr-nav-item.active .qr-nav-text {
+        color: var(--excel-green);
+      }
+
+      /* Fullscreen QR Overlay */
+      .qr-fullscreen-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #fefefe;
+        z-index: 2000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+      .qr-fullscreen-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .qr-fullscreen-content {
+        position: relative;
+        animation: qrModalIn 0.3s ease;
+      }
+      .qr-fullscreen-close {
+        position: absolute;
+        top: -45px;
+        right: 0;
+        color: #333;
+        font-size: 40px;
+        cursor: pointer;
+        opacity: 0.7;
+        transition:
+          opacity 0.2s,
+          transform 0.2s;
+        line-height: 1;
+      }
+      .qr-fullscreen-close:hover {
+        opacity: 1;
+        transform: scale(1.1);
+      }
+      .qr-fullscreen-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+        min-width: 280px;
+        max-width: 90vw;
+      }
+      .qr-fullscreen-qr-container {
+        background: #fff;
+        padding: 25px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .qr-fullscreen-qr-container img,
+      .qr-fullscreen-qr-container canvas {
+        max-width: 70vw;
+        max-height: 55vh;
+        display: block;
+      }
+      .qr-fullscreen-footer {
+        background-color: var(--excel-green);
+        color: white;
+        text-align: center;
+        padding: 20px 25px;
+      }
+      .qr-fullscreen-title {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        letter-spacing: 0.5px;
+      }
+      .qr-fullscreen-subtitle {
+        font-size: 18px;
+        opacity: 0.9;
+      }
+    </style>
+  </head>
+  <body class="theme-blue">
+    <!-- Landscape Warning Overlay -->
+    <div class="landscape-warning" id="landscape-warning">
+      <div class="landscape-warning-dismiss" id="landscape-warning-dismiss">
+        <span class="dismiss-icon">&times;</span>
+      </div>
+      <div class="dismiss-text">无视建议，横屏使用</div>
+      <div class="landscape-warning-content">
+        <svg
+          class="landscape-warning-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12" y2="18"></line>
+        </svg>
+        <p>专为竖屏设计，请使用竖屏设备，如手机</p>
+        <p>或者把浏览器窗口调整为竖屏</p>
+      </div>
+    </div>
+
+    <div class="app-container" id="app-container">
+      <!-- Top Ribbon / Formula Bar Area -->
+      <div class="excel-header">
+        <div class="formula-bar-wrapper">
+          <div class="name-box" id="name-box">A1</div>
+          <div class="formula-icon-separator">
+            <svg viewBox="0 0 24 24" class="fx-icon">
+              <path
+                fill="#666"
+                d="M5,4H8L11,10L14,4H17L12.5,12L17,20H14L11,14L8,20H5L9.5,12L5,4Z"
+              />
+            </svg>
+            <!-- Simple X like symbol -->
+          </div>
+          <!-- Actual SVG for fx is complex, using text fx for simplicity or simple path above -->
+          <div class="fx-text" id="fx-btn" title="打开二维码选择器">fx</div>
+          <div class="formula-divider"></div>
+          <div
+            class="formula-input"
+            contenteditable="false"
+            id="formula-input"
+          ></div>
+        </div>
+
+        <!-- Theme Switcher -->
+        <div class="theme-switch-container">
+          <div class="theme-rocker">
+            <div class="theme-option active" data-theme="blue">蓝色</div>
+            <div class="theme-option" data-theme="green">绿色</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spreadsheet Grid -->
+      <div class="spreadsheet-container" id="spreadsheet-container">
+        <!-- This will be populated by JS: Corner, Headers, Row Numbers, Cells -->
+      </div>
+
+      <!-- Footer / Sheet Tabs -->
+      <div class="status-bar">
+        <div class="sheet-controls">
+          <button class="nav-btn" id="btn-export" title="导出数据">&lt;</button>
+          <button class="nav-btn" id="btn-import" title="导入数据">&gt;</button>
+          <input
+            type="file"
+            id="import-file"
+            style="display: none"
+            accept=".json"
+          />
+        </div>
+        <div class="sheet-tabs-list" id="sheet-tabs-list">
+          <!-- Generated by JS -->
+        </div>
+        <button class="new-sheet-btn" id="new-sheet-btn">
+          <div class="plus-icon">+</div>
+        </button>
+
+        <div class="scroll-spacer"></div>
+      </div>
+
+      <!-- Page Footer -->
+      <div class="page-footer"></div>
+    </div>
+
+    <!-- QR Selector Modal -->
+    <div class="qr-modal-overlay" id="qr-modal-overlay">
+      <div class="qr-modal">
+        <div class="qr-modal-header">
+          <h2>二维码选择器</h2>
+          <span class="qr-modal-close" id="qr-modal-close">&times;</span>
+        </div>
+        <div class="qr-modal-body">
+          <div class="qr-upper-section">
+            <div class="qr-card">
+              <div class="qr-zoom-btn" id="qr-zoom-btn" title="点击全屏查看">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  <line x1="11" y1="8" x2="11" y2="14"></line>
+                  <line x1="8" y1="11" x2="14" y2="11"></line>
+                </svg>
+              </div>
+              <div class="qr-container" id="qr-target"></div>
+              <div class="qr-card-footer">
+                <div class="qr-card-title" id="qr-card-title">请选择设备</div>
+                <div class="qr-card-subtitle" id="qr-card-subtitle">-</div>
+              </div>
+            </div>
+            <div class="qr-right-menu" id="qr-sub-list"></div>
+          </div>
+          <div class="qr-bottom-nav" id="qr-main-nav"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fullscreen QR Overlay -->
+    <div class="qr-fullscreen-overlay" id="qr-fullscreen-overlay">
+      <div class="qr-fullscreen-content" onclick="event.stopPropagation()">
+        <span class="qr-fullscreen-close" id="qr-fullscreen-close"
+          >&times;</span
+        >
+        <div class="qr-fullscreen-card">
+          <div
+            class="qr-fullscreen-qr-container"
+            id="qr-fullscreen-target"
+          ></div>
+          <div class="qr-fullscreen-footer">
+            <div class="qr-fullscreen-title" id="qr-fullscreen-title">
+              设备名称
+            </div>
+            <div class="qr-fullscreen-subtitle" id="qr-fullscreen-subtitle">
+              编号
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /**
+       * QRCode.js - QR Code Generator Library
+       */
+      var QRCode;
+      !(function () {
+        function a(a) {
+          ((this.mode = c.MODE_8BIT_BYTE),
+            (this.data = a),
+            (this.parsedData = []));
+          for (var b = [], d = 0, e = this.data.length; e > d; d++) {
+            var f = this.data.charCodeAt(d);
+            (f > 65536
+              ? ((b[0] = 240 | ((1835008 & f) >>> 18)),
+                (b[1] = 128 | ((258048 & f) >>> 12)),
+                (b[2] = 128 | ((4032 & f) >>> 6)),
+                (b[3] = 128 | (63 & f)))
+              : f > 2048
+                ? ((b[0] = 224 | ((61440 & f) >>> 12)),
+                  (b[1] = 128 | ((4032 & f) >>> 6)),
+                  (b[2] = 128 | (63 & f)))
+                : f > 128
+                  ? ((b[0] = 192 | ((1984 & f) >>> 6)), (b[1] = 128 | (63 & f)))
+                  : (b[0] = f),
+              (this.parsedData = this.parsedData.concat(b)));
+          }
+          this.parsedData.length != this.data.length &&
+            (this.parsedData.unshift(191),
+            this.parsedData.unshift(187),
+            this.parsedData.unshift(239));
+        }
+        function b(a, b) {
+          ((this.typeNumber = a),
+            (this.errorCorrectLevel = b),
+            (this.modules = null),
+            (this.moduleCount = 0),
+            (this.dataCache = null),
+            (this.dataList = []));
+        }
+        function i(a, b) {
+          if (void 0 == a.length) throw new Error(a.length + "/" + b);
+          for (var c = 0; c < a.length && 0 == a[c]; ) c++;
+          this.num = new Array(a.length - c + b);
+          for (var d = 0; d < a.length - c; d++) this.num[d] = a[d + c];
+        }
+        function j(a, b) {
+          ((this.totalCount = a), (this.dataCount = b));
+        }
+        function k() {
+          ((this.buffer = []), (this.length = 0));
+        }
+        function m() {
+          return "undefined" != typeof CanvasRenderingContext2D;
+        }
+        function n() {
+          var a = !1,
+            b = navigator.userAgent;
+          return (
+            /android/i.test(b) &&
+              ((a = !0),
+              (aMat = b.toString().match(/android ([0-9]\.[0-9])/i)),
+              aMat && aMat[1] && (a = parseFloat(aMat[1]))),
+            a
+          );
+        }
+        function r(a, b) {
+          for (var c = 1, e = s(a), f = 0, g = l.length; g >= f; f++) {
+            var h = 0;
+            switch (b) {
+              case d.L:
+                h = l[f][0];
+                break;
+              case d.M:
+                h = l[f][1];
+                break;
+              case d.Q:
+                h = l[f][2];
+                break;
+              case d.H:
+                h = l[f][3];
+            }
+            if (h >= e) break;
+            c++;
+          }
+          if (c > l.length) throw new Error("Too long data");
+          return c;
+        }
+        function s(a) {
+          var b = encodeURI(a)
+            .toString()
+            .replace(/\%[0-9a-fA-F]{2}/g, "a");
+          return b.length + (b.length != a ? 3 : 0);
+        }
+        ((a.prototype = {
+          getLength: function () {
+            return this.parsedData.length;
+          },
+          write: function (a) {
+            for (var b = 0, c = this.parsedData.length; c > b; b++)
+              a.put(this.parsedData[b], 8);
+          },
+        }),
+          (b.prototype = {
+            addData: function (b) {
+              var c = new a(b);
+              (this.dataList.push(c), (this.dataCache = null));
+            },
+            isDark: function (a, b) {
+              if (
+                0 > a ||
+                this.moduleCount <= a ||
+                0 > b ||
+                this.moduleCount <= b
+              )
+                throw new Error(a + "," + b);
+              return this.modules[a][b];
+            },
+            getModuleCount: function () {
+              return this.moduleCount;
+            },
+            make: function () {
+              this.makeImpl(!1, this.getBestMaskPattern());
+            },
+            makeImpl: function (a, c) {
+              ((this.moduleCount = 4 * this.typeNumber + 17),
+                (this.modules = new Array(this.moduleCount)));
+              for (var d = 0; d < this.moduleCount; d++) {
+                this.modules[d] = new Array(this.moduleCount);
+                for (var e = 0; e < this.moduleCount; e++)
+                  this.modules[d][e] = null;
+              }
+              (this.setupPositionProbePattern(0, 0),
+                this.setupPositionProbePattern(this.moduleCount - 7, 0),
+                this.setupPositionProbePattern(0, this.moduleCount - 7),
+                this.setupPositionAdjustPattern(),
+                this.setupTimingPattern(),
+                this.setupTypeInfo(a, c),
+                this.typeNumber >= 7 && this.setupTypeNumber(a),
+                null == this.dataCache &&
+                  (this.dataCache = b.createData(
+                    this.typeNumber,
+                    this.errorCorrectLevel,
+                    this.dataList,
+                  )),
+                this.mapData(this.dataCache, c));
+            },
+            setupPositionProbePattern: function (a, b) {
+              for (var c = -1; 7 >= c; c++)
+                if (!(-1 >= a + c || this.moduleCount <= a + c))
+                  for (var d = -1; 7 >= d; d++)
+                    -1 >= b + d ||
+                      this.moduleCount <= b + d ||
+                      (this.modules[a + c][b + d] =
+                        (c >= 0 && 6 >= c && (0 == d || 6 == d)) ||
+                        (d >= 0 && 6 >= d && (0 == c || 6 == c)) ||
+                        (c >= 2 && 4 >= c && d >= 2 && 4 >= d)
+                          ? !0
+                          : !1);
+            },
+            getBestMaskPattern: function () {
+              for (var a = 0, b = 0, c = 0; 8 > c; c++) {
+                this.makeImpl(!0, c);
+                var d = f.getLostPoint(this);
+                (0 == c || a > d) && ((a = d), (b = c));
+              }
+              return b;
+            },
+            createMovieClip: function (a, b, c) {
+              var d = a.createEmptyMovieClip(b, c),
+                e = 1;
+              this.make();
+              for (var f = 0; f < this.modules.length; f++)
+                for (var g = f * e, h = 0; h < this.modules[f].length; h++) {
+                  var i = h * e,
+                    j = this.modules[f][h];
+                  j &&
+                    (d.beginFill(0, 100),
+                    d.moveTo(i, g),
+                    d.lineTo(i + e, g),
+                    d.lineTo(i + e, g + e),
+                    d.lineTo(i, g + e),
+                    d.endFill());
+                }
+              return d;
+            },
+            setupTimingPattern: function () {
+              for (var a = 8; a < this.moduleCount - 8; a++)
+                null == this.modules[a][6] && (this.modules[a][6] = 0 == a % 2);
+              for (var b = 8; b < this.moduleCount - 8; b++)
+                null == this.modules[6][b] && (this.modules[6][b] = 0 == b % 2);
+            },
+            setupPositionAdjustPattern: function () {
+              for (
+                var a = f.getPatternPosition(this.typeNumber), b = 0;
+                b < a.length;
+                b++
+              )
+                for (var c = 0; c < a.length; c++) {
+                  var d = a[b],
+                    e = a[c];
+                  if (null == this.modules[d][e])
+                    for (var g = -2; 2 >= g; g++)
+                      for (var h = -2; 2 >= h; h++)
+                        this.modules[d + g][e + h] =
+                          -2 == g ||
+                          2 == g ||
+                          -2 == h ||
+                          2 == h ||
+                          (0 == g && 0 == h)
+                            ? !0
+                            : !1;
+                }
+            },
+            setupTypeNumber: function (a) {
+              for (
+                var b = f.getBCHTypeNumber(this.typeNumber), c = 0;
+                18 > c;
+                c++
+              ) {
+                var d = !a && 1 == (1 & (b >> c));
+                this.modules[Math.floor(c / 3)][
+                  (c % 3) + this.moduleCount - 8 - 3
+                ] = d;
+              }
+              for (var c = 0; 18 > c; c++) {
+                var d = !a && 1 == (1 & (b >> c));
+                this.modules[(c % 3) + this.moduleCount - 8 - 3][
+                  Math.floor(c / 3)
+                ] = d;
+              }
+            },
+            setupTypeInfo: function (a, b) {
+              for (
+                var c = (this.errorCorrectLevel << 3) | b,
+                  d = f.getBCHTypeInfo(c),
+                  e = 0;
+                15 > e;
+                e++
+              ) {
+                var g = !a && 1 == (1 & (d >> e));
+                6 > e
+                  ? (this.modules[e][8] = g)
+                  : 8 > e
+                    ? (this.modules[e + 1][8] = g)
+                    : (this.modules[this.moduleCount - 15 + e][8] = g);
+              }
+              for (var e = 0; 15 > e; e++) {
+                var g = !a && 1 == (1 & (d >> e));
+                8 > e
+                  ? (this.modules[8][this.moduleCount - e - 1] = g)
+                  : 9 > e
+                    ? (this.modules[8][15 - e - 1 + 1] = g)
+                    : (this.modules[8][15 - e - 1] = g);
+              }
+              this.modules[this.moduleCount - 8][8] = !a;
+            },
+            mapData: function (a, b) {
+              for (
+                var c = -1,
+                  d = this.moduleCount - 1,
+                  e = 7,
+                  g = 0,
+                  h = this.moduleCount - 1;
+                h > 0;
+                h -= 2
+              )
+                for (6 == h && h--; ; ) {
+                  for (var i = 0; 2 > i; i++)
+                    if (null == this.modules[d][h - i]) {
+                      var j = !1;
+                      g < a.length && (j = 1 == (1 & (a[g] >>> e)));
+                      var k = f.getMask(b, d, h - i);
+                      (k && (j = !j),
+                        (this.modules[d][h - i] = j),
+                        e--,
+                        -1 == e && (g++, (e = 7)));
+                    }
+                  if (((d += c), 0 > d || this.moduleCount <= d)) {
+                    ((d -= c), (c = -c));
+                    break;
+                  }
+                }
+            },
+          }),
+          (b.PAD0 = 236),
+          (b.PAD1 = 17),
+          (b.createData = function (a, c, d) {
+            for (
+              var e = j.getRSBlocks(a, c), g = new k(), h = 0;
+              h < d.length;
+              h++
+            ) {
+              var i = d[h];
+              (g.put(i.mode, 4),
+                g.put(i.getLength(), f.getLengthInBits(i.mode, a)),
+                i.write(g));
+            }
+            for (var l = 0, h = 0; h < e.length; h++) l += e[h].dataCount;
+            if (g.getLengthInBits() > 8 * l)
+              throw new Error(
+                "code length overflow. (" +
+                  g.getLengthInBits() +
+                  ">" +
+                  8 * l +
+                  ")",
+              );
+            for (
+              g.getLengthInBits() + 4 <= 8 * l && g.put(0, 4);
+              0 != g.getLengthInBits() % 8;
+            )
+              g.putBit(!1);
+            for (;;) {
+              if (g.getLengthInBits() >= 8 * l) break;
+              if ((g.put(b.PAD0, 8), g.getLengthInBits() >= 8 * l)) break;
+              g.put(b.PAD1, 8);
+            }
+            return b.createBytes(g, e);
+          }),
+          (b.createBytes = function (a, b) {
+            for (
+              var c = 0,
+                d = 0,
+                e = 0,
+                g = new Array(b.length),
+                h = new Array(b.length),
+                j = 0;
+              j < b.length;
+              j++
+            ) {
+              var k = b[j].dataCount,
+                l = b[j].totalCount - k;
+              ((d = Math.max(d, k)),
+                (e = Math.max(e, l)),
+                (g[j] = new Array(k)));
+              for (var m = 0; m < g[j].length; m++)
+                g[j][m] = 255 & a.buffer[m + c];
+              c += k;
+              var n = f.getErrorCorrectPolynomial(l),
+                o = new i(g[j], n.getLength() - 1),
+                p = o.mod(n);
+              h[j] = new Array(n.getLength() - 1);
+              for (var m = 0; m < h[j].length; m++) {
+                var q = m + p.getLength() - h[j].length;
+                h[j][m] = q >= 0 ? p.get(q) : 0;
+              }
+            }
+            for (var r = 0, m = 0; m < b.length; m++) r += b[m].totalCount;
+            for (var s = new Array(r), t = 0, m = 0; d > m; m++)
+              for (var j = 0; j < b.length; j++)
+                m < g[j].length && (s[t++] = g[j][m]);
+            for (var m = 0; e > m; m++)
+              for (var j = 0; j < b.length; j++)
+                m < h[j].length && (s[t++] = h[j][m]);
+            return s;
+          }));
+        for (
+          var c = {
+              MODE_NUMBER: 1,
+              MODE_ALPHA_NUM: 2,
+              MODE_8BIT_BYTE: 4,
+              MODE_KANJI: 8,
+            },
+            d = { L: 1, M: 0, Q: 3, H: 2 },
+            e = {
+              PATTERN000: 0,
+              PATTERN001: 1,
+              PATTERN010: 2,
+              PATTERN011: 3,
+              PATTERN100: 4,
+              PATTERN101: 5,
+              PATTERN110: 6,
+              PATTERN111: 7,
+            },
+            f = {
+              PATTERN_POSITION_TABLE: [
+                [],
+                [6, 18],
+                [6, 22],
+                [6, 26],
+                [6, 30],
+                [6, 34],
+                [6, 22, 38],
+                [6, 24, 42],
+                [6, 26, 46],
+                [6, 28, 50],
+                [6, 30, 54],
+                [6, 32, 58],
+                [6, 34, 62],
+                [6, 26, 46, 66],
+                [6, 26, 48, 70],
+                [6, 26, 50, 74],
+                [6, 30, 54, 78],
+                [6, 30, 56, 82],
+                [6, 30, 58, 86],
+                [6, 34, 62, 90],
+                [6, 28, 50, 72, 94],
+                [6, 26, 50, 74, 98],
+                [6, 30, 54, 78, 102],
+                [6, 28, 54, 80, 106],
+                [6, 32, 58, 84, 110],
+                [6, 30, 58, 86, 114],
+                [6, 34, 62, 90, 118],
+                [6, 26, 50, 74, 98, 122],
+                [6, 30, 54, 78, 102, 126],
+                [6, 26, 52, 78, 104, 130],
+                [6, 30, 56, 82, 108, 134],
+                [6, 34, 60, 86, 112, 138],
+                [6, 30, 58, 86, 114, 142],
+                [6, 34, 62, 90, 118, 146],
+                [6, 30, 54, 78, 102, 126, 150],
+                [6, 24, 50, 76, 102, 128, 154],
+                [6, 28, 54, 80, 106, 132, 158],
+                [6, 32, 58, 84, 110, 136, 162],
+                [6, 26, 54, 82, 110, 138, 166],
+                [6, 30, 58, 86, 114, 142, 170],
+              ],
+              G15: 1335,
+              G18: 7973,
+              G15_MASK: 21522,
+              getBCHTypeInfo: function (a) {
+                for (
+                  var b = a << 10;
+                  f.getBCHDigit(b) - f.getBCHDigit(f.G15) >= 0;
+                )
+                  b ^= f.G15 << (f.getBCHDigit(b) - f.getBCHDigit(f.G15));
+                return ((a << 10) | b) ^ f.G15_MASK;
+              },
+              getBCHTypeNumber: function (a) {
+                for (
+                  var b = a << 12;
+                  f.getBCHDigit(b) - f.getBCHDigit(f.G18) >= 0;
+                )
+                  b ^= f.G18 << (f.getBCHDigit(b) - f.getBCHDigit(f.G18));
+                return (a << 12) | b;
+              },
+              getBCHDigit: function (a) {
+                for (var b = 0; 0 != a; ) (b++, (a >>>= 1));
+                return b;
+              },
+              getPatternPosition: function (a) {
+                return f.PATTERN_POSITION_TABLE[a - 1];
+              },
+              getMask: function (a, b, c) {
+                switch (a) {
+                  case e.PATTERN000:
+                    return 0 == (b + c) % 2;
+                  case e.PATTERN001:
+                    return 0 == b % 2;
+                  case e.PATTERN010:
+                    return 0 == c % 3;
+                  case e.PATTERN011:
+                    return 0 == (b + c) % 3;
+                  case e.PATTERN100:
+                    return 0 == (Math.floor(b / 2) + Math.floor(c / 3)) % 2;
+                  case e.PATTERN101:
+                    return 0 == ((b * c) % 2) + ((b * c) % 3);
+                  case e.PATTERN110:
+                    return 0 == (((b * c) % 2) + ((b * c) % 3)) % 2;
+                  case e.PATTERN111:
+                    return 0 == (((b * c) % 3) + ((b + c) % 2)) % 2;
+                  default:
+                    throw new Error("bad maskPattern:" + a);
+                }
+              },
+              getErrorCorrectPolynomial: function (a) {
+                for (var b = new i([1], 0), c = 0; a > c; c++)
+                  b = b.multiply(new i([1, g.gexp(c)], 0));
+                return b;
+              },
+              getLengthInBits: function (a, b) {
+                if (b >= 1 && 10 > b)
+                  switch (a) {
+                    case c.MODE_NUMBER:
+                      return 10;
+                    case c.MODE_ALPHA_NUM:
+                      return 9;
+                    case c.MODE_8BIT_BYTE:
+                      return 8;
+                    case c.MODE_KANJI:
+                      return 8;
+                    default:
+                      throw new Error("mode:" + a);
+                  }
+                else if (27 > b)
+                  switch (a) {
+                    case c.MODE_NUMBER:
+                      return 12;
+                    case c.MODE_ALPHA_NUM:
+                      return 11;
+                    case c.MODE_8BIT_BYTE:
+                      return 16;
+                    case c.MODE_KANJI:
+                      return 10;
+                    default:
+                      throw new Error("mode:" + a);
+                  }
+                else {
+                  if (!(41 > b)) throw new Error("type:" + b);
+                  switch (a) {
+                    case c.MODE_NUMBER:
+                      return 14;
+                    case c.MODE_ALPHA_NUM:
+                      return 13;
+                    case c.MODE_8BIT_BYTE:
+                      return 16;
+                    case c.MODE_KANJI:
+                      return 12;
+                    default:
+                      throw new Error("mode:" + a);
+                  }
+                }
+              },
+              getLostPoint: function (a) {
+                for (var b = a.getModuleCount(), c = 0, d = 0; b > d; d++)
+                  for (var e = 0; b > e; e++) {
+                    for (var f = 0, g = a.isDark(d, e), h = -1; 1 >= h; h++)
+                      if (!(0 > d + h || d + h >= b))
+                        for (var i = -1; 1 >= i; i++)
+                          0 > e + i ||
+                            e + i >= b ||
+                            ((0 != h || 0 != i) &&
+                              g == a.isDark(d + h, e + i) &&
+                              f++);
+                    f > 5 && (c += 3 + f - 5);
+                  }
+                for (var d = 0; b - 1 > d; d++)
+                  for (var e = 0; b - 1 > e; e++) {
+                    var j = 0;
+                    (a.isDark(d, e) && j++,
+                      a.isDark(d + 1, e) && j++,
+                      a.isDark(d, e + 1) && j++,
+                      a.isDark(d + 1, e + 1) && j++,
+                      (0 == j || 4 == j) && (c += 3));
+                  }
+                for (var d = 0; b > d; d++)
+                  for (var e = 0; b - 6 > e; e++)
+                    a.isDark(d, e) &&
+                      !a.isDark(d, e + 1) &&
+                      a.isDark(d, e + 2) &&
+                      a.isDark(d, e + 3) &&
+                      a.isDark(d, e + 4) &&
+                      !a.isDark(d, e + 5) &&
+                      a.isDark(d, e + 6) &&
+                      (c += 40);
+                for (var e = 0; b > e; e++)
+                  for (var d = 0; b - 6 > d; d++)
+                    a.isDark(d, e) &&
+                      !a.isDark(d + 1, e) &&
+                      a.isDark(d + 2, e) &&
+                      a.isDark(d + 3, e) &&
+                      a.isDark(d + 4, e) &&
+                      !a.isDark(d + 5, e) &&
+                      a.isDark(d + 6, e) &&
+                      (c += 40);
+                for (var k = 0, e = 0; b > e; e++)
+                  for (var d = 0; b > d; d++) a.isDark(d, e) && k++;
+                var l = Math.abs((100 * k) / b / b - 50) / 5;
+                return (c += 10 * l);
+              },
+            },
+            g = {
+              glog: function (a) {
+                if (1 > a) throw new Error("glog(" + a + ")");
+                return g.LOG_TABLE[a];
+              },
+              gexp: function (a) {
+                for (; 0 > a; ) a += 255;
+                for (; a >= 256; ) a -= 255;
+                return g.EXP_TABLE[a];
+              },
+              EXP_TABLE: new Array(256),
+              LOG_TABLE: new Array(256),
+            },
+            h = 0;
+          8 > h;
+          h++
+        )
+          g.EXP_TABLE[h] = 1 << h;
+        for (var h = 8; 256 > h; h++)
+          g.EXP_TABLE[h] =
+            g.EXP_TABLE[h - 4] ^
+            g.EXP_TABLE[h - 5] ^
+            g.EXP_TABLE[h - 6] ^
+            g.EXP_TABLE[h - 8];
+        for (var h = 0; 255 > h; h++) g.LOG_TABLE[g.EXP_TABLE[h]] = h;
+        ((i.prototype = {
+          get: function (a) {
+            return this.num[a];
+          },
+          getLength: function () {
+            return this.num.length;
+          },
+          multiply: function (a) {
+            for (
+              var b = new Array(this.getLength() + a.getLength() - 1), c = 0;
+              c < this.getLength();
+              c++
+            )
+              for (var d = 0; d < a.getLength(); d++)
+                b[c + d] ^= g.gexp(g.glog(this.get(c)) + g.glog(a.get(d)));
+            return new i(b, 0);
+          },
+          mod: function (a) {
+            if (this.getLength() - a.getLength() < 0) return this;
+            for (
+              var b = g.glog(this.get(0)) - g.glog(a.get(0)),
+                c = new Array(this.getLength()),
+                d = 0;
+              d < this.getLength();
+              d++
+            )
+              c[d] = this.get(d);
+            for (var d = 0; d < a.getLength(); d++)
+              c[d] ^= g.gexp(g.glog(a.get(d)) + b);
+            return new i(c, 0).mod(a);
+          },
+        }),
+          (j.RS_BLOCK_TABLE = [
+            [1, 26, 19],
+            [1, 26, 16],
+            [1, 26, 13],
+            [1, 26, 9],
+            [1, 44, 34],
+            [1, 44, 28],
+            [1, 44, 22],
+            [1, 44, 16],
+            [1, 70, 55],
+            [1, 70, 44],
+            [2, 35, 17],
+            [2, 35, 13],
+            [1, 100, 80],
+            [2, 50, 32],
+            [2, 50, 24],
+            [4, 25, 9],
+            [1, 134, 108],
+            [2, 67, 43],
+            [2, 33, 15, 2, 34, 16],
+            [2, 33, 11, 2, 34, 12],
+            [2, 86, 68],
+            [4, 43, 27],
+            [4, 43, 19],
+            [4, 43, 15],
+            [2, 98, 78],
+            [4, 49, 31],
+            [2, 32, 14, 4, 33, 15],
+            [4, 39, 13, 1, 40, 14],
+            [2, 121, 97],
+            [2, 60, 38, 2, 61, 39],
+            [4, 40, 18, 2, 41, 19],
+            [4, 40, 14, 2, 41, 15],
+            [2, 146, 116],
+            [3, 58, 36, 2, 59, 37],
+            [4, 36, 16, 4, 37, 17],
+            [4, 36, 12, 4, 37, 13],
+            [2, 86, 68, 2, 87, 69],
+            [4, 69, 43, 1, 70, 44],
+            [6, 43, 19, 2, 44, 20],
+            [6, 43, 15, 2, 44, 16],
+            [4, 101, 81],
+            [1, 80, 50, 4, 81, 51],
+            [4, 50, 22, 4, 51, 23],
+            [3, 36, 12, 8, 37, 13],
+            [2, 116, 92, 2, 117, 93],
+            [6, 58, 36, 2, 59, 37],
+            [4, 46, 20, 6, 47, 21],
+            [7, 42, 14, 4, 43, 15],
+            [4, 133, 107],
+            [8, 59, 37, 1, 60, 38],
+            [8, 44, 20, 4, 45, 21],
+            [12, 33, 11, 4, 34, 12],
+            [3, 145, 115, 1, 146, 116],
+            [4, 64, 40, 5, 65, 41],
+            [11, 36, 16, 5, 37, 17],
+            [11, 36, 12, 5, 37, 13],
+            [5, 109, 87, 1, 110, 88],
+            [5, 65, 41, 5, 66, 42],
+            [5, 54, 24, 7, 55, 25],
+            [11, 36, 12],
+            [5, 122, 98, 1, 123, 99],
+            [7, 73, 45, 3, 74, 46],
+            [15, 43, 19, 2, 44, 20],
+            [3, 45, 15, 13, 46, 16],
+            [1, 135, 107, 5, 136, 108],
+            [10, 74, 46, 1, 75, 47],
+            [1, 50, 22, 15, 51, 23],
+            [2, 42, 14, 17, 43, 15],
+            [5, 150, 120, 1, 151, 121],
+            [9, 69, 43, 4, 70, 44],
+            [17, 50, 22, 1, 51, 23],
+            [2, 42, 14, 19, 43, 15],
+            [3, 141, 113, 4, 142, 114],
+            [3, 70, 44, 11, 71, 45],
+            [17, 47, 21, 4, 48, 22],
+            [9, 39, 13, 16, 40, 14],
+            [3, 135, 107, 5, 136, 108],
+            [3, 67, 41, 13, 68, 42],
+            [15, 54, 24, 5, 55, 25],
+            [15, 43, 15, 10, 44, 16],
+            [4, 144, 116, 4, 145, 117],
+            [17, 68, 42],
+            [17, 50, 22, 6, 51, 23],
+            [19, 46, 16, 6, 47, 17],
+            [2, 139, 111, 7, 140, 112],
+            [17, 74, 46],
+            [7, 54, 24, 16, 55, 25],
+            [34, 37, 13],
+            [4, 151, 121, 5, 152, 122],
+            [4, 75, 47, 14, 76, 48],
+            [11, 54, 24, 14, 55, 25],
+            [16, 45, 15, 14, 46, 16],
+            [6, 147, 117, 4, 148, 118],
+            [6, 73, 45, 14, 74, 46],
+            [11, 54, 24, 16, 55, 25],
+            [30, 46, 16, 2, 47, 17],
+            [8, 132, 106, 4, 133, 107],
+            [8, 75, 47, 13, 76, 48],
+            [7, 54, 24, 22, 55, 25],
+            [22, 45, 15, 13, 46, 16],
+            [10, 142, 114, 2, 143, 115],
+            [19, 74, 46, 4, 75, 47],
+            [28, 50, 22, 6, 51, 23],
+            [33, 46, 16, 4, 47, 17],
+            [8, 152, 122, 4, 153, 123],
+            [22, 73, 45, 3, 74, 46],
+            [8, 53, 23, 26, 54, 24],
+            [12, 45, 15, 28, 46, 16],
+            [3, 147, 117, 10, 148, 118],
+            [3, 73, 45, 23, 74, 46],
+            [4, 54, 24, 31, 55, 25],
+            [11, 45, 15, 31, 46, 16],
+            [7, 146, 116, 7, 147, 117],
+            [21, 73, 45, 7, 74, 46],
+            [1, 53, 23, 37, 54, 24],
+            [19, 45, 15, 26, 46, 16],
+            [5, 145, 115, 10, 146, 116],
+            [19, 75, 47, 10, 76, 48],
+            [15, 54, 24, 25, 55, 25],
+            [23, 45, 15, 25, 46, 16],
+            [13, 145, 115, 3, 146, 116],
+            [2, 74, 46, 29, 75, 47],
+            [42, 54, 24, 1, 55, 25],
+            [23, 45, 15, 28, 46, 16],
+            [17, 145, 115],
+            [10, 74, 46, 23, 75, 47],
+            [10, 54, 24, 35, 55, 25],
+            [19, 45, 15, 35, 46, 16],
+            [17, 145, 115, 1, 146, 116],
+            [14, 74, 46, 21, 75, 47],
+            [29, 54, 24, 19, 55, 25],
+            [11, 45, 15, 46, 46, 16],
+            [13, 145, 115, 6, 146, 116],
+            [14, 74, 46, 23, 75, 47],
+            [44, 54, 24, 7, 55, 25],
+            [59, 46, 16, 1, 47, 17],
+            [12, 151, 121, 7, 152, 122],
+            [12, 75, 47, 26, 76, 48],
+            [39, 54, 24, 14, 55, 25],
+            [22, 45, 15, 41, 46, 16],
+            [6, 151, 121, 14, 152, 122],
+            [6, 75, 47, 34, 76, 48],
+            [46, 54, 24, 10, 55, 25],
+            [2, 45, 15, 64, 46, 16],
+            [17, 152, 122, 4, 153, 123],
+            [29, 74, 46, 14, 75, 47],
+            [49, 54, 24, 10, 55, 25],
+            [24, 45, 15, 46, 46, 16],
+            [4, 152, 122, 18, 153, 123],
+            [13, 74, 46, 32, 75, 47],
+            [48, 54, 24, 14, 55, 25],
+            [42, 45, 15, 32, 46, 16],
+            [20, 147, 117, 4, 148, 118],
+            [40, 75, 47, 7, 76, 48],
+            [43, 54, 24, 22, 55, 25],
+            [10, 45, 15, 67, 46, 16],
+            [19, 148, 118, 6, 149, 119],
+            [18, 75, 47, 31, 76, 48],
+            [34, 54, 24, 34, 55, 25],
+            [20, 45, 15, 61, 46, 16],
+          ]),
+          (j.getRSBlocks = function (a, b) {
+            var c = j.getRsBlockTable(a, b);
+            if (void 0 == c)
+              throw new Error(
+                "bad rs block @ typeNumber:" + a + "/errorCorrectLevel:" + b,
+              );
+            for (var d = c.length / 3, e = [], f = 0; d > f; f++)
+              for (
+                var g = c[3 * f + 0], h = c[3 * f + 1], i = c[3 * f + 2], k = 0;
+                g > k;
+                k++
+              )
+                e.push(new j(h, i));
+            return e;
+          }),
+          (j.getRsBlockTable = function (a, b) {
+            switch (b) {
+              case d.L:
+                return j.RS_BLOCK_TABLE[4 * (a - 1) + 0];
+              case d.M:
+                return j.RS_BLOCK_TABLE[4 * (a - 1) + 1];
+              case d.Q:
+                return j.RS_BLOCK_TABLE[4 * (a - 1) + 2];
+              case d.H:
+                return j.RS_BLOCK_TABLE[4 * (a - 1) + 3];
+              default:
+                return void 0;
+            }
+          }),
+          (k.prototype = {
+            get: function (a) {
+              var b = Math.floor(a / 8);
+              return 1 == (1 & (this.buffer[b] >>> (7 - (a % 8))));
+            },
+            put: function (a, b) {
+              for (var c = 0; b > c; c++)
+                this.putBit(1 == (1 & (a >>> (b - c - 1))));
+            },
+            getLengthInBits: function () {
+              return this.length;
+            },
+            putBit: function (a) {
+              var b = Math.floor(this.length / 8);
+              (this.buffer.length <= b && this.buffer.push(0),
+                a && (this.buffer[b] |= 128 >>> (this.length % 8)),
+                this.length++);
+            },
+          }));
+        var l = [
+            [17, 14, 11, 7],
+            [32, 26, 20, 14],
+            [53, 42, 32, 24],
+            [78, 62, 46, 34],
+            [106, 84, 60, 44],
+            [134, 106, 74, 58],
+            [154, 122, 86, 64],
+            [192, 152, 108, 84],
+            [230, 180, 130, 98],
+            [271, 213, 151, 119],
+            [321, 251, 177, 137],
+            [367, 287, 203, 155],
+            [425, 331, 241, 177],
+            [458, 362, 258, 194],
+            [520, 412, 292, 220],
+            [586, 450, 322, 250],
+            [644, 504, 364, 280],
+            [718, 560, 394, 310],
+            [792, 624, 442, 338],
+            [858, 666, 482, 382],
+            [929, 711, 509, 403],
+            [1003, 779, 565, 439],
+            [1091, 857, 611, 461],
+            [1171, 911, 661, 511],
+            [1273, 997, 715, 535],
+            [1367, 1059, 751, 593],
+            [1465, 1125, 805, 625],
+            [1528, 1190, 868, 658],
+            [1628, 1264, 908, 698],
+            [1732, 1370, 982, 742],
+            [1840, 1452, 1030, 790],
+            [1952, 1538, 1112, 842],
+            [2068, 1628, 1168, 898],
+            [2188, 1722, 1228, 958],
+            [2303, 1809, 1283, 983],
+            [2431, 1911, 1351, 1051],
+            [2563, 1989, 1423, 1093],
+            [2699, 2099, 1499, 1139],
+            [2809, 2213, 1579, 1219],
+            [2953, 2331, 1663, 1273],
+          ],
+          o = (function () {
+            var a = function (a, b) {
+              ((this._el = a), (this._htOption = b));
+            };
+            return (
+              (a.prototype.draw = function (a) {
+                function g(a, b) {
+                  var c = document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    a,
+                  );
+                  for (var d in b)
+                    b.hasOwnProperty(d) && c.setAttribute(d, b[d]);
+                  return c;
+                }
+                var b = this._htOption,
+                  c = this._el,
+                  d = a.getModuleCount();
+                (Math.floor(b.width / d),
+                  Math.floor(b.height / d),
+                  this.clear());
+                var h = g("svg", {
+                  viewBox: "0 0 " + String(d) + " " + String(d),
+                  width: "100%",
+                  height: "100%",
+                  fill: b.colorLight,
+                });
+                (h.setAttributeNS(
+                  "http://www.w3.org/2000/xmlns/",
+                  "xmlns:xlink",
+                  "http://www.w3.org/1999/xlink",
+                ),
+                  c.appendChild(h),
+                  h.appendChild(
+                    g("rect", {
+                      fill: b.colorDark,
+                      width: "1",
+                      height: "1",
+                      id: "template",
+                    }),
+                  ));
+                for (var i = 0; d > i; i++)
+                  for (var j = 0; d > j; j++)
+                    if (a.isDark(i, j)) {
+                      var k = g("use", { x: String(i), y: String(j) });
+                      (k.setAttributeNS(
+                        "http://www.w3.org/1999/xlink",
+                        "href",
+                        "#template",
+                      ),
+                        h.appendChild(k));
+                    }
+              }),
+              (a.prototype.clear = function () {
+                for (; this._el.hasChildNodes(); )
+                  this._el.removeChild(this._el.lastChild);
+              }),
+              a
+            );
+          })(),
+          p = "svg" === document.documentElement.tagName.toLowerCase(),
+          q = p
+            ? o
+            : m()
+              ? (function () {
+                  function a() {
+                    ((this._elImage.src =
+                      this._elCanvas.toDataURL("image/png")),
+                      (this._elImage.style.display = "block"),
+                      (this._elCanvas.style.display = "none"));
+                  }
+                  function d(a, b) {
+                    var c = this;
+                    if (
+                      ((c._fFail = b),
+                      (c._fSuccess = a),
+                      null === c._bSupportDataURI)
+                    ) {
+                      var d = document.createElement("img"),
+                        e = function () {
+                          ((c._bSupportDataURI = !1),
+                            c._fFail && _fFail.call(c));
+                        },
+                        f = function () {
+                          ((c._bSupportDataURI = !0),
+                            c._fSuccess && c._fSuccess.call(c));
+                        };
+                      return (
+                        (d.onabort = e),
+                        (d.onerror = e),
+                        (d.onload = f),
+                        (d.src =
+                          "data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=="),
+                        void 0
+                      );
+                    }
+                    c._bSupportDataURI === !0 && c._fSuccess
+                      ? c._fSuccess.call(c)
+                      : c._bSupportDataURI === !1 &&
+                        c._fFail &&
+                        c._fFail.call(c);
+                  }
+                  if (this._android && this._android <= 2.1) {
+                    var b = 1 / window.devicePixelRatio,
+                      c = CanvasRenderingContext2D.prototype.drawImage;
+                    CanvasRenderingContext2D.prototype.drawImage = function (
+                      a,
+                      d,
+                      e,
+                      f,
+                      g,
+                      h,
+                      i,
+                      j,
+                    ) {
+                      if ("nodeName" in a && /img/i.test(a.nodeName))
+                        for (var l = arguments.length - 1; l >= 1; l--)
+                          arguments[l] = arguments[l] * b;
+                      else
+                        "undefined" == typeof j &&
+                          ((arguments[1] *= b),
+                          (arguments[2] *= b),
+                          (arguments[3] *= b),
+                          (arguments[4] *= b));
+                      c.apply(this, arguments);
+                    };
+                  }
+                  var e = function (a, b) {
+                    ((this._bIsPainted = !1),
+                      (this._android = n()),
+                      (this._htOption = b),
+                      (this._elCanvas = document.createElement("canvas")),
+                      (this._elCanvas.width = b.width),
+                      (this._elCanvas.height = b.height),
+                      a.appendChild(this._elCanvas),
+                      (this._el = a),
+                      (this._oContext = this._elCanvas.getContext("2d")),
+                      (this._bIsPainted = !1),
+                      (this._elImage = document.createElement("img")),
+                      (this._elImage.style.display = "none"),
+                      this._el.appendChild(this._elImage),
+                      (this._bSupportDataURI = null));
+                  };
+                  return (
+                    (e.prototype.draw = function (a) {
+                      var b = this._elImage,
+                        c = this._oContext,
+                        d = this._htOption,
+                        e = a.getModuleCount(),
+                        f = d.width / e,
+                        g = d.height / e,
+                        h = Math.round(f),
+                        i = Math.round(g);
+                      ((b.style.display = "none"), this.clear());
+                      for (var j = 0; e > j; j++)
+                        for (var k = 0; e > k; k++) {
+                          var l = a.isDark(j, k),
+                            m = k * f,
+                            n = j * g;
+                          ((c.strokeStyle = l ? d.colorDark : d.colorLight),
+                            (c.lineWidth = 1),
+                            (c.fillStyle = l ? d.colorDark : d.colorLight),
+                            c.fillRect(m, n, f, g),
+                            c.strokeRect(
+                              Math.floor(m) + 0.5,
+                              Math.floor(n) + 0.5,
+                              h,
+                              i,
+                            ),
+                            c.strokeRect(
+                              Math.ceil(m) - 0.5,
+                              Math.ceil(n) - 0.5,
+                              h,
+                              i,
+                            ));
+                        }
+                      this._bIsPainted = !0;
+                    }),
+                    (e.prototype.makeImage = function () {
+                      this._bIsPainted && d.call(this, a);
+                    }),
+                    (e.prototype.isPainted = function () {
+                      return this._bIsPainted;
+                    }),
+                    (e.prototype.clear = function () {
+                      (this._oContext.clearRect(
+                        0,
+                        0,
+                        this._elCanvas.width,
+                        this._elCanvas.height,
+                      ),
+                        (this._bIsPainted = !1));
+                    }),
+                    (e.prototype.round = function (a) {
+                      return a ? Math.floor(1e3 * a) / 1e3 : a;
+                    }),
+                    e
+                  );
+                })()
+              : (function () {
+                  var a = function (a, b) {
+                    ((this._el = a), (this._htOption = b));
+                  };
+                  return (
+                    (a.prototype.draw = function (a) {
+                      for (
+                        var b = this._htOption,
+                          c = this._el,
+                          d = a.getModuleCount(),
+                          e = Math.floor(b.width / d),
+                          f = Math.floor(b.height / d),
+                          g = [
+                            '<table style="border:0;border-collapse:collapse;">',
+                          ],
+                          h = 0;
+                        d > h;
+                        h++
+                      ) {
+                        g.push("<tr>");
+                        for (var i = 0; d > i; i++)
+                          g.push(
+                            '<td style="border:0;border-collapse:collapse;padding:0;margin:0;width:' +
+                              e +
+                              "px;height:" +
+                              f +
+                              "px;background-color:" +
+                              (a.isDark(h, i) ? b.colorDark : b.colorLight) +
+                              ';"></td>',
+                          );
+                        g.push("</tr>");
+                      }
+                      (g.push("</table>"), (c.innerHTML = g.join("")));
+                      var j = c.childNodes[0],
+                        k = (b.width - j.offsetWidth) / 2,
+                        l = (b.height - j.offsetHeight) / 2;
+                      k > 0 && l > 0 && (j.style.margin = l + "px " + k + "px");
+                    }),
+                    (a.prototype.clear = function () {
+                      this._el.innerHTML = "";
+                    }),
+                    a
+                  );
+                })();
+        ((QRCode = function (a, b) {
+          if (
+            ((this._htOption = {
+              width: 256,
+              height: 256,
+              typeNumber: 4,
+              colorDark: "#000000",
+              colorLight: "#ffffff",
+              correctLevel: d.H,
+            }),
+            "string" == typeof b && (b = { text: b }),
+            b)
+          )
+            for (var c in b) this._htOption[c] = b[c];
+          ("string" == typeof a && (a = document.getElementById(a)),
+            (this._android = n()),
+            (this._el = a),
+            (this._oQRCode = null),
+            (this._oDrawing = new q(this._el, this._htOption)),
+            this._htOption.text && this.makeCode(this._htOption.text));
+        }),
+          (QRCode.prototype.makeCode = function (a) {
+            ((this._oQRCode = new b(
+              r(a, this._htOption.correctLevel),
+              this._htOption.correctLevel,
+            )),
+              this._oQRCode.addData(a),
+              this._oQRCode.make(),
+              (this._el.title = a),
+              this._oDrawing.draw(this._oQRCode),
+              this.makeImage());
+          }),
+          (QRCode.prototype.makeImage = function () {
+            "function" == typeof this._oDrawing.makeImage &&
+              (!this._android || this._android >= 3) &&
+              this._oDrawing.makeImage();
+          }),
+          (QRCode.prototype.clear = function () {
+            this._oDrawing.clear();
+          }),
+          (QRCode.CorrectLevel = d));
+      })();
+    </script>
+    <script>
+      const CONFIG = {
+        cols: 26, // A-Z
+        rows: 100,
+        defaultColWidth: 100,
+        defaultRowHeight: 22,
+        headerHeight: 25,
+        rowHeaderWidth: 50,
+      };
+
+      // 数据源配置
+      const DATA_SOURCES = [
+        { file: "fy.json", label: "反应" },
+        { file: "test.json", label: "测试" },
+        { file: "none.json", label: "空" },
+      ];
+
+      const state = {
+        sheets: {
+          Sheet1: {
+            data: {
+              "0-0": "二维码名称",
+              "0-1": "二维码内容",
+            },
+            // We can store column widths here if we wanted interactive resizing
+          },
+          Sheet2: {
+            data: {
+              "0-0": "二维码名称",
+              "0-1": "二维码内容",
+            },
+          },
+        },
+        activeSheet: "Sheet1",
+        selection: { r: 0, c: 0 },
+        currentDataSourceIndex: 0, // 当前数据源索引
+      };
+
+      // DOM Elements
+      const container = document.getElementById("spreadsheet-container");
+      const nameBox = document.getElementById("name-box");
+      const formulaInput = document.getElementById("formula-input");
+      const sheetTabsList = document.getElementById("sheet-tabs-list");
+
+      // Initialize
+      // Initialize
+      function init() {
+        renderSheetTabs();
+        setupGrid();
+
+        // Default load
+        loadSheet(state.activeSheet);
+        selectCell(0, 0);
+
+        // 加载默认数据源
+        loadDataSource(state.currentDataSourceIndex);
+
+        // Event Listeners
+        setupEvents();
+
+        // 横屏警告关闭按钮
+        setupLandscapeWarningDismiss();
+
+        // 默认打开二维码选择器
+        setTimeout(() => {
+          document.getElementById("qr-modal-overlay").classList.add("active");
+          // 触发渲染
+          const fxBtn = document.getElementById("fx-btn");
+          if (fxBtn) fxBtn.click();
+        }, 500);
+
+        // 主题切换
+        setupThemeSwitcher();
+      }
+
+      function setupThemeSwitcher() {
+        const options = document.querySelectorAll(".theme-option");
+        options.forEach((opt) => {
+          opt.addEventListener("click", () => {
+            // Remove active from all
+            options.forEach((o) => o.classList.remove("active"));
+            // Add to click
+            opt.classList.add("active");
+
+            const theme = opt.dataset.theme;
+            if (theme === "blue") {
+              document.body.classList.add("theme-blue");
+            } else {
+              document.body.classList.remove("theme-blue");
+            }
+          });
+        });
+      }
+
+      // 加载指定数据源
+      function loadDataSource(index) {
+        const source = DATA_SOURCES[index];
+        if (!source) return;
+
+        fetch(source.file)
+          .then((response) => {
+            if (!response.ok) throw new Error("Network response was not ok");
+            return response.json();
+          })
+          .then((json) => {
+            const keys = Object.keys(json);
+            if (keys.length > 0) {
+              // Apply default headers
+              Object.values(json).forEach((sheet) => {
+                if (!sheet.data) sheet.data = {};
+                sheet.data["0-0"] = "二维码名称";
+                sheet.data["0-1"] = "二维码内容";
+              });
+              state.sheets = json;
+              state.activeSheet = keys[0];
+            } else {
+              // 空 JSON 文件，使用默认空数据
+              state.sheets = {
+                Sheet1: {
+                  data: {
+                    "0-0": "二维码名称",
+                    "0-1": "二维码内容",
+                  },
+                },
+              };
+              state.activeSheet = "Sheet1";
+            }
+            state.currentDataSourceIndex = index;
+            renderSheetTabs();
+            loadSheet(state.activeSheet);
+            selectCell(0, 0);
+            // Update corner header text
+            updateCornerHeader();
+            // Hide dropdown
+            hideDropdown();
+          })
+          .catch((err) => {
+            console.log(
+              `Could not load ${source.file} (likely due to local file restrictions or missing file), keeping default state.`,
+              err,
+            );
+          });
+      }
+
+      // 更新 corner header 文本和下拉框选中状态
+      function updateCornerHeader() {
+        const corner = document.getElementById("corner-header");
+        if (corner) {
+          const label = DATA_SOURCES[state.currentDataSourceIndex].label;
+          corner.querySelector(".corner-label").textContent = label;
+        }
+
+        // 更新下拉框菜单项的选中状态
+        const dropdown = document.getElementById("corner-dropdown");
+        if (dropdown) {
+          const items = dropdown.querySelectorAll(".corner-dropdown-item");
+          items.forEach((item, index) => {
+            if (index === state.currentDataSourceIndex) {
+              item.classList.add("active");
+            } else {
+              item.classList.remove("active");
+            }
+          });
+        }
+      }
+
+      // 切换下拉框显示
+      function toggleDropdown(e) {
+        e.stopPropagation();
+        const dropdown = document.getElementById("corner-dropdown");
+        if (dropdown) {
+          dropdown.classList.toggle("active");
+        }
+      }
+
+      // 隐藏下拉框
+      function hideDropdown() {
+        const dropdown = document.getElementById("corner-dropdown");
+        if (dropdown) {
+          dropdown.classList.remove("active");
+        }
+      }
+
+      // 选择数据源
+      function selectDataSource(index) {
+        loadDataSource(index);
+      }
+
+      function setupGrid() {
+        // 1. Set CSS Grid Template
+        // We adjust the first two columns to be wider for the QR content
+        // But CSS repeat is rigid. Let's make it inline styles or just uniform for simplicity first,
+        // maybe 150px for all or custom.
+        // Let's create the DOM elements first.
+
+        container.innerHTML = "";
+
+        // 0. Corner Header with Data Source Dropdown
+        const corner = document.createElement("div");
+        corner.className = "corner-header";
+        corner.id = "corner-header";
+        corner.style.gridColumn = "1 / 2";
+        corner.style.gridRow = "1 / 2";
+        corner.title = "点击选择数据源";
+        corner.onclick = toggleDropdown;
+
+        // Label text
+        const label = document.createElement("span");
+        label.className = "corner-label";
+        label.textContent = DATA_SOURCES[state.currentDataSourceIndex].label;
+        corner.appendChild(label);
+
+        // Dropdown menu
+        const dropdown = document.createElement("div");
+        dropdown.className = "corner-dropdown";
+        dropdown.id = "corner-dropdown";
+        DATA_SOURCES.forEach((source, index) => {
+          const item = document.createElement("div");
+          item.className =
+            "corner-dropdown-item" +
+            (index === state.currentDataSourceIndex ? " active" : "");
+          item.textContent = source.label;
+          item.onclick = (e) => {
+            e.stopPropagation();
+            selectDataSource(index);
+          };
+          dropdown.appendChild(item);
+        });
+        corner.appendChild(dropdown);
+
+        container.appendChild(corner);
+
+        // 点击其他地方关闭下拉框
+        document.addEventListener("click", hideDropdown);
+
+        // 1. Column Headers (A-Z)
+        for (let c = 0; c < CONFIG.cols; c++) {
+          const char = String.fromCharCode(65 + c);
+          const header = document.createElement("div");
+          header.className = "header-col";
+          header.textContent = char;
+          header.dataset.col = c;
+          header.style.gridColumn = `${c + 2} / ${c + 3}`;
+          header.style.gridRow = "1 / 2";
+          container.appendChild(header);
+        }
+
+        // 2. Row Headers (1-100)
+        for (let r = 0; r < CONFIG.rows; r++) {
+          const header = document.createElement("div");
+          header.className = "header-row";
+          header.textContent = r + 1;
+          header.dataset.row = r;
+          header.style.gridColumn = "1 / 2";
+          header.style.gridRow = `${r + 2} / ${r + 3}`;
+          container.appendChild(header);
+        }
+
+        // 3. Cells
+        // We create them once. We verify performance. 2600 divs is okay.
+        // If we wanted virtual scrolling we'd do that, but for this size it's fine.
+        for (let r = 0; r < CONFIG.rows; r++) {
+          for (let c = 0; c < CONFIG.cols; c++) {
+            const cell = document.createElement("div");
+            cell.className = "cell";
+            cell.contentEditable = true;
+            cell.dataset.r = r;
+            cell.dataset.c = c;
+            cell.style.gridColumn = `${c + 2} / ${c + 3}`;
+            cell.style.gridRow = `${r + 2} / ${r + 3}`;
+            // Specific styling for QR columns in headers? No, data.
+            container.appendChild(cell);
+          }
+        }
+
+        // 4. Selection Overlay
+        const selectionBox = document.createElement("div");
+        selectionBox.className = "selection-box";
+        selectionBox.id = "selection-box";
+        selectionBox.innerHTML = '<div class="selection-handle"></div>';
+        container.appendChild(selectionBox);
+      }
+
+      function loadSheet(sheetName) {
+        state.activeSheet = sheetName;
+        const data = state.sheets[sheetName].data;
+
+        // Update all cells
+        const cells = container.querySelectorAll(".cell");
+        cells.forEach((cell) => {
+          const r = cell.dataset.r;
+          const c = cell.dataset.c;
+          const key = `${r}-${c}`;
+          cell.textContent = data[key] || "";
+        });
+
+        updateTabsUI();
+      }
+
+      function renderSheetTabs() {
+        sheetTabsList.innerHTML = "";
+        Object.keys(state.sheets).forEach((name) => {
+          const tab = document.createElement("div");
+          tab.className = `sheet-tab ${name === state.activeSheet ? "active" : ""}`;
+
+          // Wrap text in span to easily replace with input later or just target text
+          const span = document.createElement("span");
+          span.textContent = name;
+          tab.appendChild(span);
+
+          tab.onclick = (e) => {
+            // If editing, don't trigger sheet load
+            if (e.target.tagName === "INPUT") return;
+
+            loadSheet(name);
+            selectCell(0, 0);
+          };
+
+          tab.ondblclick = () => {
+            startRename(tab, name);
+          };
+
+          sheetTabsList.appendChild(tab);
+        });
+      }
+
+      function startRename(tabElement, oldName) {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = oldName;
+        // Styling to match tab
+        input.style.width = "100px";
+        input.style.fontFamily = "inherit";
+        input.style.fontSize = "inherit";
+        input.style.border = "none";
+        input.style.outline = "2px solid #217346";
+        input.style.padding = "2px";
+
+        tabElement.innerHTML = "";
+        tabElement.appendChild(input);
+        input.focus();
+        input.select();
+
+        let committed = false;
+        const commit = () => {
+          if (committed) return;
+          committed = true;
+
+          const newName = input.value.trim();
+          if (newName && newName !== oldName) {
+            // Check for duplicates
+            if (state.sheets[newName]) {
+              alert("Sheet name already exists");
+              renderSheetTabs(); // Revert
+              return;
+            }
+            performRename(oldName, newName);
+          } else {
+            renderSheetTabs(); // Revert
+          }
+        };
+
+        input.addEventListener("blur", commit);
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            commit();
+          } else if (e.key === "Escape") {
+            committed = true;
+            renderSheetTabs();
+          }
+        });
+      }
+
+      function performRename(oldName, newName) {
+        const newSheets = {};
+        // Preserve order by iterating old keys
+        Object.keys(state.sheets).forEach((key) => {
+          if (key === oldName) {
+            newSheets[newName] = state.sheets[oldName];
+          } else {
+            newSheets[key] = state.sheets[key];
+          }
+        });
+
+        state.sheets = newSheets;
+
+        // Update active sheet reference if needed
+        if (state.activeSheet === oldName) {
+          state.activeSheet = newName;
+        }
+
+        renderSheetTabs();
+      }
+
+      function updateTabsUI() {
+        const tabs = sheetTabsList.querySelectorAll(".sheet-tab");
+        tabs.forEach((tab) => {
+          if (tab.textContent === state.activeSheet) {
+            tab.classList.add("active");
+          } else {
+            tab.classList.remove("active");
+          }
+        });
+      }
+
+      function selectCell(r, c) {
+        r = parseInt(r);
+        c = parseInt(c);
+        state.selection = { r, c };
+
+        // Update variables
+        const cell = getCellEl(r, c);
+        if (!cell) return;
+
+        // 1. Move Selection Box
+        const box = document.getElementById("selection-box");
+
+        // We can use offsetLeft/Top but only if layout is stable.
+        // Since it matches the grid lines, we can use the same rendering logic?
+        // Actually box is absolute.
+        // The cell position:
+        box.style.left = cell.offsetLeft + "px";
+        box.style.top = cell.offsetTop + "px";
+        box.style.width = cell.offsetWidth + "px";
+        box.style.height = cell.offsetHeight + "px";
+
+        // 2. Update Name Box
+        const colName = String.fromCharCode(65 + c);
+        nameBox.textContent = `${colName}${r + 1}`;
+
+        // 3. Update Formula Bar
+        const key = `${r}-${c}`;
+        formulaInput.textContent =
+          state.sheets[state.activeSheet].data[key] || "";
+
+        // 4. Highlight Headers
+        document
+          .querySelectorAll(".header-col")
+          .forEach((h) => h.classList.remove("active"));
+        document
+          .querySelectorAll(".header-row")
+          .forEach((h) => h.classList.remove("active"));
+
+        const colHeader = container.querySelector(
+          `.header-col[data-col="${c}"]`,
+        );
+        const rowHeader = container.querySelector(
+          `.header-row[data-row="${r}"]`,
+        );
+        if (colHeader) colHeader.classList.add("active");
+        if (rowHeader) rowHeader.classList.add("active");
+      }
+
+      function getCellEl(r, c) {
+        // A bit inefficient selector, but fine for prototype
+        return container.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+      }
+
+      function setupEvents() {
+        // Grid Clicks
+        container.addEventListener("mousedown", (e) => {
+          const cell = e.target.closest(".cell");
+          if (cell) {
+            selectCell(cell.dataset.r, cell.dataset.c);
+          }
+        });
+
+        // Content Edits
+        container.addEventListener("input", (e) => {
+          if (e.target.classList.contains("cell")) {
+            const r = e.target.dataset.r;
+            const c = e.target.dataset.c;
+            const val = e.target.textContent;
+
+            // Save to state
+            state.sheets[state.activeSheet].data[`${r}-${c}`] = val;
+
+            // Update formula bar if active
+            if (state.selection.r == r && state.selection.c == c) {
+              formulaInput.textContent = val;
+            }
+          }
+        });
+
+        // Formula Bar Edits
+        formulaInput.addEventListener("input", () => {
+          const val = formulaInput.textContent;
+          const { r, c } = state.selection;
+          const cell = getCellEl(r, c);
+          if (cell) {
+            cell.textContent = val;
+            state.sheets[state.activeSheet].data[`${r}-${c}`] = val;
+          }
+        });
+
+        // New Sheet
+        document
+          .getElementById("new-sheet-btn")
+          .addEventListener("click", () => {
+            const count = Object.keys(state.sheets).length + 1;
+            const newName = `Sheet${count}`;
+            state.sheets[newName] = {
+              data: {
+                "0-0": "二维码名称",
+                "0-1": "二维码内容",
+              },
+            };
+            renderSheetTabs();
+            loadSheet(newName);
+          });
+
+        // Export Data (<)
+        document.getElementById("btn-export").addEventListener("click", () => {
+          // Clone state to filter out header row (0-x) and sort keys
+          const sheetsToExport = JSON.parse(JSON.stringify(state.sheets));
+          Object.values(sheetsToExport).forEach((sheet) => {
+            if (sheet.data) {
+              const sortedData = {};
+              Object.keys(sheet.data)
+                .filter((key) => {
+                  // Filter out headers (row 0)
+                  const [r] = key.split("-").map(Number);
+                  return r !== 0;
+                })
+                .sort((a, b) => {
+                  // Sort by Row then Column
+                  const [r1, c1] = a.split("-").map(Number);
+                  const [r2, c2] = b.split("-").map(Number);
+                  if (r1 !== r2) return r1 - r2;
+                  return c1 - c2;
+                })
+                .forEach((key) => {
+                  sortedData[key] = sheet.data[key];
+                });
+              sheet.data = sortedData;
+            }
+          });
+
+          const dataStr =
+            "data:text/json;charset=utf-8," +
+            encodeURIComponent(JSON.stringify(sheetsToExport, null, 2));
+          const downloadAnchorNode = document.createElement("a");
+          downloadAnchorNode.setAttribute("href", dataStr);
+          downloadAnchorNode.setAttribute("download", "excel_data.json");
+          document.body.appendChild(downloadAnchorNode);
+          downloadAnchorNode.click();
+          downloadAnchorNode.remove();
+        });
+
+        // Import Data Trigger (>)
+        document.getElementById("btn-import").addEventListener("click", () => {
+          document.getElementById("import-file").click();
+        });
+
+        // Handle Import File
+        document
+          .getElementById("import-file")
+          .addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              try {
+                const jsonObj = JSON.parse(event.target.result);
+                // Basic validation
+                const keys = Object.keys(jsonObj);
+                if (keys.length > 0) {
+                  // Enforce default headers for all imported sheets
+                  Object.values(jsonObj).forEach((sheet) => {
+                    if (!sheet.data) sheet.data = {};
+                    sheet.data["0-0"] = "二维码名称";
+                    sheet.data["0-1"] = "二维码内容";
+                  });
+
+                  state.sheets = jsonObj;
+                  state.activeSheet = keys[0];
+                  renderSheetTabs();
+                  loadSheet(state.activeSheet);
+                  selectCell(0, 0);
+                } else {
+                  alert("Invalid data format or empty file");
+                }
+              } catch (err) {
+                alert("Error parsing JSON: " + err.message);
+              }
+            };
+            reader.readAsText(file);
+            e.target.value = ""; // Reset
+          });
+
+        // ===== QR Selector Modal =====
+        setupQRSelector();
+      }
+
+      // QR Selector Module
+      function setupQRSelector() {
+        const qrModalOverlay = document.getElementById("qr-modal-overlay");
+        const qrModalClose = document.getElementById("qr-modal-close");
+        const qrMainNav = document.getElementById("qr-main-nav");
+        const qrSubList = document.getElementById("qr-sub-list");
+        const qrTarget = document.getElementById("qr-target");
+        const qrCardTitle = document.getElementById("qr-card-title");
+        const qrCardSubtitle = document.getElementById("qr-card-subtitle");
+        const qrZoomBtn = document.getElementById("qr-zoom-btn");
+        const qrFullscreenOverlay = document.getElementById(
+          "qr-fullscreen-overlay",
+        );
+        const qrFullscreenClose = document.getElementById(
+          "qr-fullscreen-close",
+        );
+        const qrFullscreenTarget = document.getElementById(
+          "qr-fullscreen-target",
+        );
+        const qrFullscreenTitle = document.getElementById(
+          "qr-fullscreen-title",
+        );
+        const qrFullscreenSubtitle = document.getElementById(
+          "qr-fullscreen-subtitle",
+        );
+
+        let qrCurrentCategory = "";
+        let qrCurrentItem = null;
+
+        // Open modal when fx is clicked
+        document.getElementById("fx-btn").addEventListener("click", () => {
+          openQRModal();
+        });
+
+        // Close modal
+        qrModalClose.addEventListener("click", closeQRModal);
+        qrModalOverlay.addEventListener("click", (e) => {
+          if (e.target === qrModalOverlay) closeQRModal();
+        });
+
+        // Fullscreen handlers
+        qrZoomBtn.addEventListener("click", openQRFullscreen);
+        qrFullscreenClose.addEventListener("click", closeQRFullscreen);
+        qrFullscreenOverlay.addEventListener("click", (e) => {
+          if (e.target === qrFullscreenOverlay) closeQRFullscreen();
+        });
+
+        // ESC key handling
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            if (qrFullscreenOverlay.classList.contains("active")) {
+              closeQRFullscreen();
+            } else if (qrModalOverlay.classList.contains("active")) {
+              closeQRModal();
+            }
+          }
+        });
+
+        function openQRModal() {
+          qrModalOverlay.classList.add("active");
+          renderQRMainNav();
+          // Select first category
+          const categories = Object.keys(state.sheets);
+          if (categories.length > 0) {
+            selectQRCategory(categories[0]);
+          }
+        }
+
+        function closeQRModal() {
+          qrModalOverlay.classList.remove("active");
+        }
+
+        function renderQRMainNav() {
+          qrMainNav.innerHTML = "";
+          Object.keys(state.sheets).forEach((sheetName) => {
+            const navItem = document.createElement("div");
+            navItem.className = `qr-nav-item ${sheetName === qrCurrentCategory ? "active" : ""}`;
+            navItem.onclick = () => selectQRCategory(sheetName);
+            navItem.innerHTML = `<div class="qr-nav-circle"></div><div class="qr-nav-text">${sheetName}</div>`;
+            qrMainNav.appendChild(navItem);
+          });
+        }
+
+        function selectQRCategory(category) {
+          qrCurrentCategory = category;
+          // Update nav active state
+          qrMainNav.querySelectorAll(".qr-nav-item").forEach((item) => {
+            const text = item.querySelector(".qr-nav-text").innerText;
+            item.classList.toggle("active", text === category);
+          });
+          renderQRSubList(category);
+        }
+
+        function getItemsFromSheetData(sheetData) {
+          if (!sheetData) return [];
+          const rows = {};
+          Object.keys(sheetData).forEach((key) => {
+            const parts = key.split("-");
+            if (parts.length < 2) return;
+            const r = parseInt(parts[0]);
+            const c = parseInt(parts[1]);
+            // Skip header row (row 0)
+            if (r === 0) return;
+            if (!rows[r]) rows[r] = {};
+            if (c === 0) rows[r].name = sheetData[key];
+            if (c === 1) rows[r].content = sheetData[key];
+          });
+          return Object.keys(rows)
+            .sort((a, b) => parseInt(a) - parseInt(b))
+            .map((r) => rows[r])
+            .filter((item) => item.name || item.content);
+        }
+
+        function renderQRSubList(category) {
+          qrSubList.innerHTML = "";
+          const sheet = state.sheets[category];
+          const items =
+            sheet && sheet.data ? getItemsFromSheetData(sheet.data) : [];
+
+          // Get displayField from sheet config, default to "name"
+          // "name" = 显示二维码名称 (column 0)
+          // "content" = 显示二维码内容 (column 1)
+          const displayField =
+            sheet && sheet.displayField ? sheet.displayField : "name";
+
+          if (items.length > 0) {
+            items.forEach((item, index) => {
+              const label = document.createElement("label");
+              label.className = "qr-radio-item";
+              const input = document.createElement("input");
+              input.type = "radio";
+              input.name = "qr-device";
+              if (index === 0) input.checked = true;
+              input.onchange = () => updateQRCard(item);
+              const spanRadio = document.createElement("span");
+              spanRadio.className = "qr-custom-radio";
+              const spanText = document.createElement("span");
+              // Display based on displayField setting
+              if (displayField === "content") {
+                spanText.innerText = item.content || "(无内容)";
+              } else {
+                spanText.innerText = item.name || "(无名称)";
+              }
+              label.appendChild(input);
+              label.appendChild(spanRadio);
+              label.appendChild(spanText);
+              qrSubList.appendChild(label);
+              if (index === 0) updateQRCard(item);
+            });
+          } else {
+            qrCurrentItem = null;
+            qrCardTitle.innerText = "暂无数据";
+            qrCardSubtitle.innerText = "-";
+            qrTarget.innerHTML = "";
+          }
+
+          // 同步右侧列表高度与左侧卡片
+          setTimeout(() => {
+            const qrCard = document.querySelector(".qr-card");
+            if (qrCard) {
+              const cardHeight = qrCard.offsetHeight;
+              qrSubList.style.minHeight = cardHeight + "px";
+              qrSubList.style.maxHeight = cardHeight + "px";
+            }
+          }, 50);
+        }
+
+        function updateQRCard(item) {
+          qrCurrentItem = item;
+          qrCardTitle.innerText = item.name || "(无名称)";
+          qrCardSubtitle.innerText = item.content || "-";
+          qrTarget.innerHTML = "";
+          if (item.content) {
+            new QRCode(qrTarget, {
+              text: item.content,
+              width: 180,
+              height: 180,
+              colorDark: "#000000",
+              colorLight: "#ffffff",
+              correctLevel: QRCode.CorrectLevel.H,
+            });
+          }
+        }
+
+        function openQRFullscreen() {
+          if (!qrCurrentItem || !qrCurrentItem.content) return;
+          qrFullscreenOverlay.classList.add("active");
+          qrFullscreenTitle.innerText = qrCurrentItem.name || "(无名称)";
+          qrFullscreenSubtitle.innerText = qrCurrentItem.content || "-";
+          qrFullscreenTarget.innerHTML = "";
+          new QRCode(qrFullscreenTarget, {
+            text: qrCurrentItem.content,
+            width: 400,
+            height: 400,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H,
+          });
+        }
+
+        function closeQRFullscreen() {
+          qrFullscreenOverlay.classList.remove("active");
+          setTimeout(() => {
+            qrFullscreenTarget.innerHTML = "";
+          }, 300);
+        }
+      }
+
+      // 横屏警告关闭功能
+      function setupLandscapeWarningDismiss() {
+        const dismissBtn = document.getElementById("landscape-warning-dismiss");
+        const warningOverlay = document.getElementById("landscape-warning");
+
+        if (dismissBtn && warningOverlay) {
+          dismissBtn.addEventListener("click", () => {
+            warningOverlay.classList.add("dismissed");
+          });
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>
