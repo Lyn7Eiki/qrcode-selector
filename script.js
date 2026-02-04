@@ -689,7 +689,7 @@ function setupQRSelector() {
       const qrCard = document.querySelector(".qr-card");
       if (qrCard) {
         const cardHeight = qrCard.offsetHeight;
-        qrSubList.style.setProperty("--qr-card-height", cardHeight + "px");
+        qrSubList.style.minHeight = cardHeight + "px";
         qrSubList.style.maxHeight = cardHeight + "px";
       }
     }, 50);
