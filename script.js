@@ -11,6 +11,7 @@ const CONFIG = {
 const DATA_SOURCES = [
   { file: "fy.json", label: "反应" },
   { file: "test.json", label: "测试" },
+  { file: "none.json", label: "空" },
 ];
 
 const state = {
@@ -78,14 +79,26 @@ function loadDataSource(index) {
         });
         state.sheets = json;
         state.activeSheet = keys[0];
-        state.currentDataSourceIndex = index;
-        renderSheetTabs();
-        loadSheet(state.activeSheet);
-        selectCell(0, 0);
-        // Update corner header text
-        const corner = document.getElementById("corner-header");
-        if (corner) corner.textContent = source.label;
+      } else {
+        // 空 JSON 文件，使用默认空数据
+        state.sheets = {
+          Sheet1: {
+            data: {
+              "0-0": "二维码名称",
+              "0-1": "二维码内容",
+            },
+          },
+        };
+        state.activeSheet = "Sheet1";
       }
+      state.currentDataSourceIndex = index;
+      renderSheetTabs();
+      loadSheet(state.activeSheet);
+      selectCell(0, 0);
+      // Update corner header text
+      updateCornerHeader();
+      // Hide dropdown
+      hideDropdown();
     })
     .catch((err) => {
       console.log(
@@ -95,10 +108,35 @@ function loadDataSource(index) {
     });
 }
 
-// 切换数据源
-function switchDataSource() {
-  const nextIndex = (state.currentDataSourceIndex + 1) % DATA_SOURCES.length;
-  loadDataSource(nextIndex);
+// 更新 corner header 文本
+function updateCornerHeader() {
+  const corner = document.getElementById("corner-header");
+  if (corner) {
+    const label = DATA_SOURCES[state.currentDataSourceIndex].label;
+    corner.querySelector(".corner-label").textContent = label;
+  }
+}
+
+// 切换下拉框显示
+function toggleDropdown(e) {
+  e.stopPropagation();
+  const dropdown = document.getElementById("corner-dropdown");
+  if (dropdown) {
+    dropdown.classList.toggle("active");
+  }
+}
+
+// 隐藏下拉框
+function hideDropdown() {
+  const dropdown = document.getElementById("corner-dropdown");
+  if (dropdown) {
+    dropdown.classList.remove("active");
+  }
+}
+
+// 选择数据源
+function selectDataSource(index) {
+  loadDataSource(index);
 }
 
 function setupGrid() {
@@ -110,16 +148,43 @@ function setupGrid() {
 
   container.innerHTML = "";
 
-  // 0. Corner Header with Data Source Switcher
+  // 0. Corner Header with Data Source Dropdown
   const corner = document.createElement("div");
   corner.className = "corner-header";
   corner.id = "corner-header";
   corner.style.gridColumn = "1 / 2";
   corner.style.gridRow = "1 / 2";
-  corner.title = "点击切换数据源";
-  corner.textContent = DATA_SOURCES[state.currentDataSourceIndex].label;
-  corner.onclick = switchDataSource;
+  corner.title = "点击选择数据源";
+  corner.onclick = toggleDropdown;
+
+  // Label text
+  const label = document.createElement("span");
+  label.className = "corner-label";
+  label.textContent = DATA_SOURCES[state.currentDataSourceIndex].label;
+  corner.appendChild(label);
+
+  // Dropdown menu
+  const dropdown = document.createElement("div");
+  dropdown.className = "corner-dropdown";
+  dropdown.id = "corner-dropdown";
+  DATA_SOURCES.forEach((source, index) => {
+    const item = document.createElement("div");
+    item.className =
+      "corner-dropdown-item" +
+      (index === state.currentDataSourceIndex ? " active" : "");
+    item.textContent = source.label;
+    item.onclick = (e) => {
+      e.stopPropagation();
+      selectDataSource(index);
+    };
+    dropdown.appendChild(item);
+  });
+  corner.appendChild(dropdown);
+
   container.appendChild(corner);
+
+  // 点击其他地方关闭下拉框
+  document.addEventListener("click", hideDropdown);
 
   // 1. Column Headers (A-Z)
   for (let c = 0; c < CONFIG.cols; c++) {

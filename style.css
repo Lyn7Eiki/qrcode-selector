@@ -264,6 +264,61 @@ body {
   );
 }
 
+/* Corner Dropdown */
+.corner-label {
+  position: relative;
+  z-index: 1;
+}
+
+.corner-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 80px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-5px);
+  transition: all 0.2s ease;
+  z-index: 100;
+}
+
+.corner-dropdown.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.corner-dropdown-item {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.corner-dropdown-item:first-child {
+  border-radius: 4px 4px 0 0;
+}
+
+.corner-dropdown-item:last-child {
+  border-radius: 0 0 4px 4px;
+}
+
+.corner-dropdown-item:hover {
+  background: #f0f0f0;
+}
+
+.corner-dropdown-item.active {
+  background: var(--excel-green);
+  color: white;
+  font-weight: 600;
+}
+
 /* Cells */
 .cell {
   border-right: 1px solid var(--grid-line-color);
