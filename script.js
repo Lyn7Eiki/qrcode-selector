@@ -56,6 +56,9 @@ function init() {
 
   // Event Listeners
   setupEvents();
+
+  // 横屏警告关闭按钮
+  setupLandscapeWarningDismiss();
 }
 
 // 加载指定数据源
@@ -733,6 +736,18 @@ function setupQRSelector() {
     setTimeout(() => {
       qrFullscreenTarget.innerHTML = "";
     }, 300);
+  }
+}
+
+// 横屏警告关闭功能
+function setupLandscapeWarningDismiss() {
+  const dismissBtn = document.getElementById("landscape-warning-dismiss");
+  const warningOverlay = document.getElementById("landscape-warning");
+
+  if (dismissBtn && warningOverlay) {
+    dismissBtn.addEventListener("click", () => {
+      warningOverlay.classList.add("dismissed");
+    });
   }
 }
 

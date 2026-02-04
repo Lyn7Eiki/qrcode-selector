@@ -3,13 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>QR Code Manager</title>
+    <title>二维码工具</title>
     <link rel="icon" type="image/jpeg" href="zombatar.jpg" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <!-- Landscape Warning Overlay -->
     <div class="landscape-warning" id="landscape-warning">
+      <div class="landscape-warning-dismiss" id="landscape-warning-dismiss">
+        <span class="dismiss-icon">&times;</span>
+      </div>
+      <div class="dismiss-text">无视建议，横屏使用</div>
       <div class="landscape-warning-content">
         <svg
           class="landscape-warning-icon"

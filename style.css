@@ -41,6 +41,36 @@ body {
   align-items: center;
 }
 
+/* Dismiss button in top-right corner */
+.landscape-warning-dismiss {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.3s ease;
+}
+
+.landscape-warning-dismiss:hover {
+  color: white;
+}
+
+.dismiss-icon {
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.dismiss-text {
+  position: absolute;
+  top: 68px;
+  right: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+}
+
 .landscape-warning-content {
   text-align: center;
   color: white;
@@ -74,22 +104,22 @@ body {
   line-height: 1.5;
 }
 
-/* Show warning when in landscape mode */
+/* Show warning when in landscape mode (unless dismissed) */
 @media screen and (orientation: landscape) {
-  .landscape-warning {
+  .landscape-warning:not(.dismissed) {
     display: flex;
   }
-  .app-container {
+  .landscape-warning:not(.dismissed) + .app-container {
     display: none;
   }
 }
 
 /* For screens wider than tall (desktop/tablet in landscape) */
 @media screen and (min-aspect-ratio: 1/1) {
-  .landscape-warning {
+  .landscape-warning:not(.dismissed) {
     display: flex;
   }
-  .app-container {
+  .landscape-warning:not(.dismissed) + .app-container {
     display: none;
   }
 }
