@@ -2284,8 +2284,241 @@
 
       // 数据源配置
       const DATA_SOURCES = [
-        { file: "fy.json", label: "反应" },
-        { file: "test.json", label: "测试" },
+        {
+          file: "fy.json",
+          label: "反应",
+          content: {
+            房间: {
+              displayField: "name",
+              data: {
+                "1-0": "离心间",
+                "1-1": "D1217",
+                "2-0": "蛋白提取间",
+                "2-1": "D1218",
+                "3-0": "压滤间",
+                "3-1": "D1219",
+                "4-0": "试剂配制间",
+                "4-1": "D1210",
+                "5-0": "反应组分库",
+                "5-1": "D1216",
+              },
+            },
+            反应罐: {
+              displayField: "content",
+              data: {
+                "1-0": "一号反应罐",
+                "1-1": "R204-1",
+                "2-0": "二号反应罐",
+                "2-1": "R204-2",
+                "3-0": "三号反应罐",
+                "3-1": "R204-3",
+                "4-0": "四号反应罐",
+                "4-1": "R204-4",
+                "5-0": "五号反应罐",
+                "5-1": "R204-5",
+                "6-0": "六号反应罐",
+                "6-1": "R204-6",
+                "7-0": "七号反应罐",
+                "7-1": "R204-7",
+              },
+            },
+            平衡液罐: {
+              displayField: "content",
+              data: {
+                "1-0": "平衡液罐",
+                "1-1": "R203-1",
+              },
+            },
+            缓冲液罐: {
+              displayField: "content",
+              data: {
+                "1-0": "一号缓冲液罐",
+                "1-1": "V202-1",
+                "2-0": "二号缓冲液罐",
+                "2-1": "V202-2",
+                "3-0": "三号缓冲液罐",
+                "3-1": "V202-3",
+                "4-0": "四号缓冲液罐",
+                "4-1": "V202-4",
+                "5-0": "五号缓冲液罐",
+                "5-1": "V202-5",
+                "6-0": "六号缓冲液罐",
+                "6-1": "V202-6",
+                "7-0": "七号缓冲液罐",
+                "7-1": "V202-7",
+              },
+            },
+            试剂流量计: {
+              displayField: "content",
+              data: {
+                "1-0": "一号试剂流量计",
+                "1-1": "JXY-182",
+                "2-0": "二号试剂流量计",
+                "2-1": "JXY-184",
+                "3-0": "三号试剂流量计",
+                "3-1": "JXY-186",
+                "4-0": "四号试剂流量计",
+                "4-1": "JXY-188",
+                "5-0": "五号试剂流量计",
+                "5-1": "JXY-190",
+                "6-0": "六号试剂流量计",
+                "6-1": "JXY-220",
+                "7-0": "七号试剂流量计",
+                "7-1": "JXY-222",
+              },
+            },
+            酒精流量计: {
+              displayField: "content",
+              data: {
+                "1-0": "一号酒精流量计",
+                "1-1": "JXY-183",
+                "2-0": "二号酒精流量计",
+                "2-1": "JXY-185",
+                "3-0": "三号酒精流量计",
+                "3-1": "JXY-187",
+                "4-0": "四号酒精流量计",
+                "4-1": "JXY-189",
+                "5-0": "五号酒精流量计",
+                "5-1": "JXY-191",
+                "6-0": "六号酒精流量计",
+                "6-1": "JXY-221",
+                "7-0": "七号酒精流量计",
+                "7-1": "JXY-223",
+              },
+            },
+            配液罐: {
+              displayField: "content",
+              data: {
+                "1-0": "配液罐",
+                "1-1": "R202",
+                "2-0": "配液罐",
+                "2-1": "R201-1",
+                "3-0": "配液罐",
+                "3-1": "R201-2",
+              },
+            },
+            板框: {
+              displayField: "content",
+              data: {
+                "1-0": "板框",
+                "1-1": "M201-1",
+                "2-0": "板框",
+                "2-1": "M201-2",
+                "3-0": "板框",
+                "3-1": "M201-3",
+              },
+            },
+            离心机: {
+              displayField: "content",
+              data: {
+                "1-0": "离心机",
+                "1-1": "C201-1",
+                "2-0": "离心机",
+                "2-1": "C201-2",
+                "3-0": "离心机",
+                "3-1": "C201-3",
+                "4-0": "离心机",
+                "4-1": "C201-4",
+                "5-0": "离心机",
+                "5-1": "C201-5",
+                "6-0": "离心机",
+                "6-1": "C201-6",
+                "7-0": "离心机",
+                "7-1": "C201-7",
+              },
+            },
+            仪器: {
+              data: {
+                "1-0": "澄明度检测仪",
+                "1-1": "XY-H004",
+                "2-0": "pH计（制品）",
+                "2-1": "XY-FC-682",
+                "3-0": "pH计（洗液）",
+                "3-1": "XY-H054",
+                "4-0": "电导率仪（旧）",
+                "4-1": "XY-H199",
+                "5-0": "电导率仪（新）",
+                "5-1": "XY-FC-754",
+              },
+            },
+            系统: {
+              data: {
+                "1-0": "反应自控系统",
+                "1-1": "XY-FD-576",
+                "2-0": "反应CIP系统",
+                "2-1": "XY-KZ-458",
+              },
+            },
+            管道: {
+              data: {
+                "1-0": "融浆间自（或）去压滤间管道",
+                "1-1": "XY-H436",
+                "2-0": "离心间自（或）去压滤间管道",
+                "2-1": "XY-H437",
+                "3-0": "试剂配制间自（或）去压滤间管道",
+                "3-1": "XY-H438",
+                "4-0": "压滤间自（或）去白蛋白管道",
+                "4-1": "XY-H439",
+                "5-0": "压滤间自（或）去球蛋白管道",
+                "5-1": "XY-H440",
+              },
+            },
+          },
+        },
+        {
+          file: "test.json",
+          label: "测试",
+          content: {
+            房间: {
+              data: {
+                "1-0": "测试房间1",
+                "1-1": "r101",
+                "2-0": "测试房间2",
+                "2-1": "r102",
+                "3-0": "测试房间3",
+                "3-1": "r201",
+                "4-0": "测试房间4",
+                "4-1": "r202",
+                "5-0": "测试房间5",
+                "5-1": "r203",
+                "6-0": "测试房间6",
+                "6-1": "r301",
+                "7-0": "测试房间7",
+                "7-1": "r302",
+              },
+            },
+            罐子: {
+              data: {
+                "1-0": "一号罐",
+                "1-1": "A1",
+                "2-0": "二号罐",
+                "2-1": "A2",
+                "3-0": "三号罐",
+                "3-1": "R1",
+                "4-0": "四号罐",
+                "4-1": "R2",
+                "5-0": "五号罐",
+                "5-1": "R3",
+              },
+            },
+            流量计: {
+              data: {
+                "1-0": "一号流量计",
+                "1-1": "abc-113",
+                "2-0": "二号流量计",
+                "2-1": "abc-117",
+                "3-0": "三号流量计",
+                "3-1": "abc-120",
+                "4-0": "四号流量计",
+                "4-1": "abc-191",
+                "5-0": "五号流量计",
+                "5-1": "abc-192",
+                "6-0": "六号流量计",
+                "6-1": "abc-200",
+              },
+            },
+          },
+        },
         { file: "none.json", label: "空" },
       ];
 
@@ -2371,49 +2604,67 @@
         const source = DATA_SOURCES[index];
         if (!source) return;
 
+        // 如果有内置内容，直接使用
+        if (source.content) {
+          processData(source.content, index);
+          return;
+        }
+
+        // 如果是"空"，直接处理空数据
+        if (source.label === "空") {
+          processData({}, index);
+          return;
+        }
+
+        // 只有在没有内置内容时才尝试 fetch (作为后备)
         fetch(source.file)
           .then((response) => {
             if (!response.ok) throw new Error("Network response was not ok");
             return response.json();
           })
           .then((json) => {
-            const keys = Object.keys(json);
-            if (keys.length > 0) {
-              // Apply default headers
-              Object.values(json).forEach((sheet) => {
-                if (!sheet.data) sheet.data = {};
-                sheet.data["0-0"] = "二维码名称";
-                sheet.data["0-1"] = "二维码内容";
-              });
-              state.sheets = json;
-              state.activeSheet = keys[0];
-            } else {
-              // 空 JSON 文件，使用默认空数据
-              state.sheets = {
-                Sheet1: {
-                  data: {
-                    "0-0": "二维码名称",
-                    "0-1": "二维码内容",
-                  },
-                },
-              };
-              state.activeSheet = "Sheet1";
-            }
-            state.currentDataSourceIndex = index;
-            renderSheetTabs();
-            loadSheet(state.activeSheet);
-            selectCell(0, 0);
-            // Update corner header text
-            updateCornerHeader();
-            // Hide dropdown
-            hideDropdown();
+            processData(json, index);
           })
           .catch((err) => {
             console.log(
               `Could not load ${source.file} (likely due to local file restrictions or missing file), keeping default state.`,
               err,
             );
+            // 这里可以添加更友好的用户提示
           });
+      }
+
+      function processData(json, index) {
+        const keys = Object.keys(json);
+        if (keys.length > 0) {
+          // Apply default headers
+          Object.values(json).forEach((sheet) => {
+            if (!sheet.data) sheet.data = {};
+            sheet.data["0-0"] = "二维码名称";
+            sheet.data["0-1"] = "二维码内容";
+          });
+          state.sheets = json;
+          state.activeSheet = keys[0];
+        } else {
+          // 空 JSON 文件，使用默认空数据
+          state.sheets = {
+            Sheet1: {
+              data: {
+                "0-0": "二维码名称",
+                "0-1": "二维码内容",
+              },
+            },
+          };
+          state.activeSheet = "Sheet1";
+        }
+        state.currentDataSourceIndex = index;
+        renderSheetTabs();
+        loadSheet(state.activeSheet);
+        selectCell(0, 0);
+        // Update corner header text
+        updateCornerHeader();
+        // Hide dropdown
+        hideDropdown();
       }
 
       // 更新 corner header 文本和下拉框选中状态
