@@ -683,6 +683,16 @@ function setupQRSelector() {
       qrCardSubtitle.innerText = "-";
       qrTarget.innerHTML = "";
     }
+
+    // 同步右侧列表高度与左侧卡片
+    setTimeout(() => {
+      const qrCard = document.querySelector(".qr-card");
+      if (qrCard) {
+        const cardHeight = qrCard.offsetHeight;
+        qrSubList.style.setProperty("--qr-card-height", cardHeight + "px");
+        qrSubList.style.maxHeight = cardHeight + "px";
+      }
+    }, 50);
   }
 
   function updateQRCard(item) {

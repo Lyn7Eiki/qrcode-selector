@@ -572,7 +572,7 @@ body {
 .qr-upper-section {
   display: flex;
   gap: 20px;
-  align-items: stretch;
+  align-items: flex-start;
 }
 
 .qr-card {
@@ -660,6 +660,7 @@ body {
   padding: 10px;
   flex: 1;
   min-width: 0;
+  max-height: var(--qr-card-height, 320px);
   overflow-y: auto;
   overflow-x: hidden;
   border: 1px solid #e1e8f0;
