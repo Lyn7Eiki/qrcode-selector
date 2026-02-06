@@ -10,6 +10,7 @@ const CONFIG = {
 // 数据源配置
 const DATA_SOURCES = [
   { file: "fy.json", label: "反应" },
+  { file: "qcl.json", label: "超滤" },
   { file: "test.json", label: "测试" },
   { file: "none.json", label: "空" },
 ];
